@@ -3,7 +3,7 @@ import cv2
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import PostureVideo
+from .models import PostureVideo, UserProfile
 
 
 class RegisterForm(UserCreationForm):
@@ -16,9 +16,68 @@ class RegisterForm(UserCreationForm):
         })
     )
 
+    name = forms.CharField(
+        max_length=100, required=True,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Full Name'})
+    )
+    age = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-input', 'placeholder': 'Age (Optional)', 'id': 'id_age'})
+    )
+    activity = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "Select Primary Activity"),
+            ("laptop", "Working on laptop"),
+            ("desktop", "Desktop work"),
+            ("phone", "Using phone"),
+            ("studying", "Studying"),
+            ("gaming", "Gaming")
+        ],
+        widget=forms.Select(attrs={'class': 'form-input', 'id': 'id_activity'})
+    )
+    sitting_hours = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "Select Sitting Hours"),
+            ("1-3", "1–3 hours"),
+            ("4-6", "4–6 hours"),
+            ("7-9", "7–9 hours"),
+            ("10+", "10+ hours")
+        ],
+        widget=forms.Select(attrs={'class': 'form-input', 'id': 'id_sitting_hours'})
+    )
+    exercise_habit = forms.ChoiceField(
+        required=False,
+        choices=[
+            ("", "Select Exercise Habit"),
+            ("regular", "Yes regularly"),
+            ("sometimes", "Sometimes"),
+            ("rarely", "Rarely"),
+            ("never", "Never")
+        ],
+        widget=forms.Select(attrs={'class': 'form-input', 'id': 'id_exercise_habit'})
+    )
+
+    role = forms.ChoiceField(
+        required=True,
+        choices=[
+            ('patient', 'Patient'),
+            ('doctor', 'Doctor')
+        ],
+        widget=forms.Select(attrs={'class': 'form-input', 'id': 'id_role'})
+    )
+    
+    doctor = forms.ModelChoiceField(
+        queryset=UserProfile.objects.filter(role='doctor'),
+        required=False,
+        empty_label="Select your Doctor (Optional)",
+        widget=forms.Select(attrs={'class': 'form-input', 'id': 'doctor-field'})
+    )
+
     class Meta:
         model = User
-        fields = ('username', 'email', 'password1', 'password2')
+        fields = ('username', 'email', 'name', 'role', 'doctor', 'password1', 'password2', 'age', 'activity', 'sitting_hours', 'exercise_habit')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,6 +99,18 @@ class RegisterForm(UserCreationForm):
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
+            profile = UserProfile.objects.create(
+                user=user,
+                name=self.cleaned_data['name'],
+                age=self.cleaned_data['age'],
+                activity=self.cleaned_data['activity'],
+                sitting_hours=self.cleaned_data['sitting_hours'],
+                exercise_habit=self.cleaned_data['exercise_habit'],
+                role=self.cleaned_data['role']
+            )
+            if self.cleaned_data.get('doctor'):
+                profile.doctor = self.cleaned_data['doctor']
+                profile.save()
         return user
 
 

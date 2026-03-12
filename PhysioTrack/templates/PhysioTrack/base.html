@@ -64,15 +64,19 @@
                     <a href="{% url 'home' %}" class="text-xl font-bold tracking-tight text-slate-900">Physio<span
                             class="text-primary">Track</span></a>
                 </div>
-                <!-- Navigation Links -->
                 <nav class="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
                     <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
                         href="{% url 'home' %}" data-i18n="nav_home">Home</a>
                     {% if user.is_authenticated %}
+                    {% if user.userprofile.role == 'doctor' %}
+                    <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
+                        href="{% url 'doctor_dashboard' %}" data-i18n="nav_dashboard">Dashboard</a>
+                    {% else %}
                     <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
                         href="{% url 'upload' %}" data-i18n="nav_upload">Upload</a>
                     <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors"
                         href="{% url 'history' %}" data-i18n="nav_history">History</a>
+                    {% endif %}
                     {% endif %}
                 </nav>
                 <!-- Language Toggle + Auth -->
@@ -175,6 +179,7 @@
                 nav_home: "الرئيسية",
                 nav_upload: "رفع صورة",
                 nav_history: "السجل",
+                nav_dashboard: "لوحة الطبيب",
                 nav_login: "تسجيل الدخول",
                 nav_register: "إنشاء حساب",
                 nav_logout: "تسجيل الخروج",
@@ -304,6 +309,7 @@
                 nav_home: "Home",
                 nav_upload: "Upload",
                 nav_history: "History",
+                nav_dashboard: "Dashboard",
                 nav_login: "Login",
                 nav_register: "Register",
                 nav_logout: "Logout",

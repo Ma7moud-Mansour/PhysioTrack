@@ -352,6 +352,8 @@ def analyze_posture(image_path):
     return {
         "result": result,
         "score": final_score,
+        "neck_score": neck_score,
+        "back_score": back_score,
         "issues": issues,
         "visualization_image": visualization_filename
     }

@@ -147,34 +147,107 @@
             </div>
             <div class="p-6 pt-5">
                 <div class="flex flex-col gap-3">
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-500" data-i18n="result_cervical">Cervical (Neck)</span>
-                        {% if video.score >= 60 %}
-                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                    {% with n_score=neck_score|default:video.score|default:0 b_score=back_score|default:video.score|default:0 %}
+                    <!-- Eye level -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Eye level</span>
+                        {% if n_score >= 80 %}
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">🟢 Good posture</span>
+                        {% elif n_score >= 60 %}
+                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">🟡 Needs adjustment</span>
                         {% else %}
-                        <span class="text-amber-500 font-bold" data-i18n="result_check_align">Check Alignment</span>
+                        <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">🔴 Poor posture</span>
                         {% endif %}
                     </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-500" data-i18n="result_thoracic">Thoracic (Mid-back)</span>
-                        {% if video.score >= 50 %}
-                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                    <!-- Neck -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Neck</span>
+                        {% if n_score >= 80 %}
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">🟢 Good posture</span>
+                        {% elif n_score >= 60 %}
+                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">🟡 Needs adjustment</span>
                         {% else %}
-                        <span class="text-red-500 font-bold" data-i18n="result_needs_correction">Needs Correction</span>
+                        <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">🔴 Poor posture</span>
                         {% endif %}
                     </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-slate-500" data-i18n="result_lumbar">Lumbar (Lower-back)</span>
-                        {% if video.score >= 70 %}
-                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                    <!-- Shoulders -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Shoulders</span>
+                        {% if n_score >= 80 %}
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">🟢 Good posture</span>
+                        {% elif n_score >= 60 %}
+                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">🟡 Needs adjustment</span>
                         {% else %}
-                        <span class="text-amber-500 font-bold" data-i18n="result_check_tilt">Check Tilt</span>
+                        <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">🔴 Poor posture</span>
                         {% endif %}
                     </div>
+                    <!-- Hips -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Hips</span>
+                        {% if b_score >= 80 %}
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">🟢 Good posture</span>
+                        {% elif b_score >= 60 %}
+                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">🟡 Needs adjustment</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">🔴 Poor posture</span>
+                        {% endif %}
+                    </div>
+                    <!-- Knee & Foot -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Knee & Foot</span>
+                        {% if b_score >= 80 %}
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">🟢 Good posture</span>
+                        {% elif b_score >= 60 %}
+                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">🟡 Needs adjustment</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold">🔴 Poor posture</span>
+                        {% endif %}
+                    </div>
+                    <!-- Arms & Wrist -->
+                    <div class="flex justify-between text-xs items-center">
+                        <span class="text-slate-500 font-medium">Arms & Wrist</span>
+                        <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">⚪ Neutral</span>
+                    </div>
+                    {% endwith %}
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Correct Faulty Position Section -->
+    {% if "forward_head" in issues or "rounded_back" in issues %}
+    <div class="mt-8 bg-red-50 rounded-xl p-8 border border-red-100">
+        <h2 class="text-xl font-bold text-red-900 mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-red-600">warning</span>
+            Correct the Faulty Position
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% if "forward_head" in issues %}
+            <div class="bg-white p-5 rounded-lg shadow-sm border border-red-100 flex gap-4 items-start">
+                <div class="w-16 h-16 shrink-0 bg-red-100 rounded flex items-center justify-center text-red-500 overflow-hidden">
+                    <img src="{% static 'images/exercises/neck_stretch.png' %}" alt="Forward Head" class="w-full h-full object-cover p-1">
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900">Forward Head</h4>
+                    <p class="text-sm text-slate-600 mt-1">Your head is leaning forward. Keep your ears aligned with your shoulders.</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if "rounded_back" in issues %}
+            <div class="bg-white p-5 rounded-lg shadow-sm border border-red-100 flex gap-4 items-start">
+                <div class="w-16 h-16 shrink-0 bg-red-100 rounded flex items-center justify-center text-red-500 overflow-hidden">
+                    <img src="{% static 'images/exercises/back_stretch.png' %}" alt="Rounded Back" class="w-full h-full object-cover p-1">
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900">Rounded Back</h4>
+                    <p class="text-sm text-slate-600 mt-1">Your back is rounded. Try sitting upright and supporting your lower back.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Recommendations Section -->
     <div class="mt-12">
@@ -204,88 +277,89 @@
         </div>
     </div>
 
-    {% load static %}
-
-    <!-- Recommended Stretches Section -->
-    {% if issues %}
-    <div class="stretch-section mt-12">
-        <div class="stretch-header">
-            <span class="material-symbols-outlined stretch-header-icon">fitness_center</span>
-            <div>
-                <h2 class="text-xl font-bold text-slate-900" data-i18n="result_stretches_title">Recommended Stretches</h2>
-                <p class="text-sm text-slate-500 mt-1" data-i18n="result_stretches_desc">Based on your analysis, try these exercises to improve your posture.</p>
-            </div>
+    <!-- Break Reminder Controls -->
+    <div class="mt-8 p-6 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+        <div>
+            <h3 class="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-indigo-500">alarm</span>
+                Break Reminder (30 mins)
+            </h3>
+            <p class="text-sm text-indigo-700 mt-1">Enable a timer to remind you to stand up and stretch.</p>
         </div>
-        <div class="stretch-grid">
-            {% if "forward_head" in issues %}
-            <!-- Neck Stretch Card -->
-            <div class="stretch-card">
-                <div class="stretch-card-img">
-                    <img src="{% static 'images/exercises/neck_stretch.png' %}" alt="Neck Stretch Exercise">
-                </div>
-                <div class="stretch-card-body">
-                    <span class="stretch-badge stretch-badge--neck">
-                        <span class="material-symbols-outlined" style="font-size:14px;">swap_horiz</span>
-                        Neck
-                    </span>
-                    <h3 class="stretch-card-title" data-i18n="stretch_neck_title">Neck Stretch</h3>
-                    <p class="stretch-card-desc" data-i18n="stretch_neck_desc">Tilt your head toward one shoulder and hold for 10 seconds. Repeat on both sides.</p>
-                    <div class="stretch-card-footer">
-                        <span class="stretch-duration">
-                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
-                            10 sec per side
-                        </span>
-                    </div>
-                </div>
-            </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="breakReminderToggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+        </label>
+    </div>
 
-            <!-- Chest Opener Stretch Card -->
-            <div class="stretch-card">
-                <div class="stretch-card-img">
-                    <img src="{% static 'images/exercises/chest_opener.png' %}" alt="Chest Opener Stretch">
-                </div>
-                <div class="stretch-card-body">
-                    <span class="stretch-badge stretch-badge--chest">
-                        <span class="material-symbols-outlined" style="font-size:14px;">open_with</span>
-                        Chest
-                    </span>
-                    <h3 class="stretch-card-title" data-i18n="stretch_chest_title">Chest Opener Stretch</h3>
-                    <p class="stretch-card-desc" data-i18n="stretch_chest_desc">Clasp hands behind your back and open your chest. Hold for 15 seconds.</p>
-                    <div class="stretch-card-footer">
-                        <span class="stretch-duration">
-                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
-                            15 sec
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            {% if "rounded_back" in issues %}
-            <!-- Seated Back Stretch Card -->
-            <div class="stretch-card">
-                <div class="stretch-card-img">
-                    <img src="{% static 'images/exercises/back_stretch.png' %}" alt="Seated Back Stretch">
-                </div>
-                <div class="stretch-card-body">
-                    <span class="stretch-badge stretch-badge--back">
-                        <span class="material-symbols-outlined" style="font-size:14px;">accessibility_new</span>
-                        Back
-                    </span>
-                    <h3 class="stretch-card-title" data-i18n="stretch_back_title">Seated Back Stretch</h3>
-                    <p class="stretch-card-desc" data-i18n="stretch_back_desc">Sit upright and gently arch your back backward. Hold for 15 seconds.</p>
-                    <div class="stretch-card-footer">
-                        <span class="stretch-duration">
-                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
-                            15 sec
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+    {% if issues %}
+        <!-- Playlist Button -->
+        <div class="mt-8 text-center">
+            <a href="https://youtube.com/playlist?list=PLdeP3j6DXD7Jd3kIQDi-hC3rR-Y9rejZl&si=yxGRJePdXYdVEbJ- " target="_blank" class="inline-flex items-center gap-2 px-8 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-300">
+                <span class="material-symbols-outlined">play_circle</span>
+                Posture Exercises Playlist
+            </a>
         </div>
     </div>
     {% endif %}
+
+    <!-- General Posture Tips & Common Mistakes -->
+    <div class="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- 10 Posture Tips -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                General Posture Tips
+            </h2>
+            <ul class="space-y-3">
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">1.</span> Rest your feet flat on the floor.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">2.</span> Keep knees at or below hip level.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">3.</span> Maintain a small gap between the back of your knees and the chair.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">4.</span> Sit back in the chair to support your lumbar spine.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">5.</span> Keep shoulders relaxed.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">6.</span> Keep forearms parallel to the ground.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">7.</span> Avoid crossing your knees or ankles.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">8.</span> Position your screen at eye level.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">9.</span> Adjust the chair height so you are looking straight ahead.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="text-emerald-500 font-bold">10.</span> Keep your mouse and keyboard close.</li>
+            </ul>
+        </div>
+
+        <!-- Common Posture Mistakes -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+            <h2 class="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-red-500">cancel</span>
+                Common Posture Mistakes
+            </h2>
+            <ul class="space-y-4">
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Slouching or leaning forward.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Looking down at the screen for long periods.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Crossing legs, which tilts the hips.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Hanging feet off the ground.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Shoulders hunched up towards ears.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Reaching too far forward for the mouse or keyboard.</li>
+                <li class="flex items-start gap-3 text-sm text-slate-600"><span class="mt-0.5 text-lg">❌</span> Sitting for hours without taking a break.</li>
+            </ul>
+        </div>
+    </div>
+
+<script>
+    const reminderToggle = document.getElementById('breakReminderToggle');
+    let breakInterval;
+
+    if (reminderToggle) {
+        reminderToggle.addEventListener('change', function() {
+            if (this.checked) {
+                // 30 minutes = 1800000 ms
+                breakInterval = setInterval(function() {
+                    alert("Time to stand up and stretch!");
+                }, 1800000);
+            } else {
+                clearInterval(breakInterval);
+            }
+        });
+    }
+</script>
 
 </div>
 {% endblock %}

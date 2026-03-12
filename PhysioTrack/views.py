@@ -84,6 +84,8 @@ def upload_image(request):
             request.session['posture_issues'] = analysis.get('issues', [])
             request.session['visualization_image'] = analysis.get('visualization_image')
             request.session['posture_message'] = analysis.get('message')
+            request.session['neck_score'] = analysis.get('neck_score')
+            request.session['back_score'] = analysis.get('back_score')
 
             messages.success(request, 'Image uploaded and analyzed successfully!')
             return redirect('result', pk=posture_image.pk)
@@ -105,12 +107,16 @@ def result_view(request, pk):
     issues = request.session.pop('posture_issues', [])
     visualization_image = request.session.pop('visualization_image', None)
     message = request.session.pop('posture_message', None)
+    neck_score = request.session.pop('neck_score', None)
+    back_score = request.session.pop('back_score', None)
     
     return render(request, 'PhysioTrack/result.html', {
         'video': posture_video,
         'issues': issues,
         'visualization_image': visualization_image,
         'message': message,
+        'neck_score': neck_score,
+        'back_score': back_score,
     })
 
 
@@ -119,3 +125,26 @@ def history_view(request):
     """Display all past analyses for the logged-in user, newest first."""
     videos = PostureVideo.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'PhysioTrack/history.html', {'videos': videos})
+
+@login_required
+def doctor_dashboard(request):
+    """Dashboard for doctors to view their patients' latest posture results."""
+    profile = request.user.userprofile
+    
+    if profile.role != 'doctor':
+        messages.error(request, 'Access denied. Only doctors can view the dashboard.')
+        return redirect('home')
+        
+    patients = profile.patients.all()
+    
+    # Attach the latest posture video to each patient profile
+    for patient in patients:
+        patient.latest_result = PostureVideo.objects.filter(
+            user=patient.user
+        ).order_by('-created_at').first()
+        
+    context = {
+        'patients': patients
+    }
+    
+    return render(request, 'PhysioTrack/doctor_dashboard.html', context)
