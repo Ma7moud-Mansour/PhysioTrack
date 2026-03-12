@@ -14,16 +14,34 @@ Features preserved:
 - Django visualization saving
 """
 
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
+
 import math
+import gc
 from collections import deque
 
 import cv2
 from ultralytics import YOLO  # [YOLOv8] Pose detection model
 
+import torch
+
+torch.set_num_threads(1)
+torch.set_num_interop_threads(1)
+
 # ── YOLOv8 Pose Model ──
 # Load model once at module level for efficiency.
 # The model weights are auto-downloaded on first use.
-_yolo_model = YOLO("yolov8n-pose.pt")
+_yolo_model = None
+
+def get_model():
+    global _yolo_model
+    if _yolo_model is None:
+        _yolo_model = YOLO("yolov8n-pose.pt")
+        #_yolo_model.fuse()
+    return _yolo_model
 
 # ── COCO Keypoint Indices (YOLOv8 Pose) ──
 # 0=nose, 1=left_eye, 2=right_eye, 3=left_ear, 4=right_ear
@@ -178,14 +196,16 @@ def analyze_posture(image_path):
     print(f"{'='*50}\n")
 
     # Normalize image resolution to improve performance
-    frame = cv2.resize(frame, (640, 480))
+    frame = cv2.resize(frame, (256, 256))
 
     visualization_filename = None
     issues = []
     
     # ── [YOLOv8] Run pose detection ──
     # verbose=False suppresses console output from YOLO
-    results = _yolo_model(frame, verbose=False)
+    model = get_model()
+    with torch.no_grad():
+        results = model(frame, imgsz=256, verbose=False)
 
     # Check if a person is detected using boxes
     if len(results[0].boxes) == 0:
@@ -325,6 +345,9 @@ def analyze_posture(image_path):
     print(f"Final result: {result}")
     print(f"Detected issues: {issues}")
     print(f"{'='*78}\n")
+
+    del results
+    gc.collect()
 
     return {
         "result": result,
