@@ -81,18 +81,16 @@ class RegisterForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({
-            'class': 'form-input',
-            'placeholder': 'Username',
-        })
-        self.fields['password1'].widget.attrs.update({
-            'class': 'form-input',
-            'placeholder': 'Password',
-        })
-        self.fields['password2'].widget.attrs.update({
-            'class': 'form-input',
-            'placeholder': 'Confirm password',
-        })
+        
+        # Premium Tailwind CSS classes for all inputs
+        input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
+        
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = input_classes
+            
+        self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
+        self.fields['password1'].widget.attrs['placeholder'] = 'Create a secure password'
+        self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
 
     def save(self, commit=True):
         user = super().save(commit=False)
