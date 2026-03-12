@@ -1,0 +1,494 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>{% block title %}PhysioTrack{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3713ec",
+                        "background-light": "#f6f6f8",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "arabic": ["Cairo", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        html[dir="rtl"] body { font-family: 'Cairo', sans-serif; }
+        .lang-toggle { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-background-light text-slate-900 min-h-screen flex flex-col font-display">
+
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo -->
+            <div class="flex items-center gap-2">
+                <div class="bg-primary p-1.5 rounded-lg flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-xl">exercise</span>
+                </div>
+                <a href="{% url 'home' %}" class="text-xl font-bold tracking-tight text-slate-900">Physio<span class="text-primary">Track</span></a>
+            </div>
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="{% url 'home' %}" data-i18n="nav_home">Home</a>
+                {% if user.is_authenticated %}
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="{% url 'upload' %}" data-i18n="nav_upload">Upload</a>
+                <a class="text-sm font-medium text-slate-600 hover:text-primary transition-colors" href="{% url 'history' %}" data-i18n="nav_history">History</a>
+                {% endif %}
+            </nav>
+            <!-- Language Toggle + Auth -->
+            <div class="flex items-center gap-3">
+                <!-- Language Toggle Button -->
+                <button onclick="toggleLanguage()" id="langToggle" class="lang-toggle flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 hover:bg-slate-50 transition-all">
+                    <span class="material-symbols-outlined text-base">translate</span>
+                    <span id="langLabel">العربية</span>
+                </button>
+                {% if user.is_authenticated %}
+                <span class="text-sm font-medium text-slate-500 hidden sm:inline">{{ user.username }}</span>
+                <a href="{% url 'logout' %}" class="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-opacity-90 rounded-lg shadow-sm shadow-primary/20 transition-all" data-i18n="nav_logout">
+                    Logout
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}" class="px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-all" data-i18n="nav_login">
+                    Login
+                </a>
+                <a href="{% url 'register' %}" class="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-opacity-90 rounded-lg shadow-sm shadow-primary/20 transition-all" data-i18n="nav_register">
+                    Register
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Messages -->
+{% if messages %}
+<div class="max-w-3xl mx-auto px-4 pt-4 flex flex-col gap-2">
+    {% for message in messages %}
+    <div class="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium border transition-all
+        {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-700
+        {% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-700
+        {% elif message.tags == 'info' %}bg-blue-50 border-blue-200 text-blue-700
+        {% else %}bg-amber-50 border-amber-200 text-amber-700{% endif %}">
+        <span class="material-symbols-outlined text-lg">
+            {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% elif message.tags == 'info' %}info{% else %}warning{% endif %}
+        </span>
+        <span class="flex-1">{{ message }}</span>
+        <button onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100 transition-opacity">
+            <span class="material-symbols-outlined text-lg">close</span>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Main Content Area -->
+<main class="flex-grow">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-slate-200 py-8 px-6">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3 text-slate-400">
+            <span class="material-symbols-outlined text-xl">exercise</span>
+            <span class="text-sm font-medium" data-i18n="footer_copy">© 2026 PhysioTrack AI. All rights reserved.</span>
+        </div>
+        <div class="flex gap-6 text-sm font-medium text-slate-500">
+            <a class="hover:text-primary transition-colors" href="#" data-i18n="footer_privacy">Privacy Policy</a>
+            <a class="hover:text-primary transition-colors" href="#" data-i18n="footer_terms">Terms of Service</a>
+            <a class="hover:text-primary transition-colors" href="#" data-i18n="footer_support">Support</a>
+        </div>
+    </div>
+</footer>
+
+<!-- Move Reminder Modal -->
+<div id="moveReminderModal" class="reminder-modal hidden">
+    <div class="reminder-content rounded-xl shadow-2xl p-6 text-center">
+        <div class="reminder-icon-wrap mx-auto mb-4 border-4 border-amber-500/20 text-amber-500 size-16 flex items-center justify-center rounded-full">
+            <span class="material-symbols-outlined text-3xl">directions_walk</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2" data-i18n="reminder_title">Time to Move!</h3>
+        <p class="text-sm text-slate-500 mb-6 leading-relaxed" data-i18n="reminder_desc">
+            You've been sitting for 30 minutes. Take a quick break to stretch and improve circulation.
+        </p>
+        <button onclick="dismissReminder()" class="btn btn--primary btn--full" data-i18n="reminder_btn">
+            Got it, I'll move
+        </button>
+    </div>
+</div>
+
+<!-- Translation Engine -->
+<script>
+const translations = {
+    ar: {
+        // Navbar
+        nav_home: "الرئيسية",
+        nav_upload: "رفع فيديو",
+        nav_history: "السجل",
+        nav_login: "تسجيل الدخول",
+        nav_register: "إنشاء حساب",
+        nav_logout: "تسجيل الخروج",
+        // Footer
+        footer_copy: "© 2026 PhysioTrack AI. جميع الحقوق محفوظة.",
+        footer_privacy: "سياسة الخصوصية",
+        footer_terms: "شروط الخدمة",
+        footer_support: "الدعم",
+        // Reminder
+        reminder_title: "قم وتحرك!",
+        reminder_desc: "لقد كنت جالساً لمدة 30 دقيقة. خذ استراحة قصيرة لتمديد جسمك وتحسين الدورة الدموية.",
+        reminder_btn: "حسناً، سأتحرك",
+        // Home
+        home_title: "مرحباً بك في",
+        home_brand: "PHYSIOTRACK",
+        home_subtitle: "حلل وضعية جلوسك في ثوانٍ باستخدام تحليل الفيديو بالذكاء الاصطناعي لتقليل آلام الظهر وتحسين وضع الجسم.",
+        home_upload_btn: "رفع فيديو",
+        home_history_btn: "عرض السجل",
+        home_start_btn: "ابدأ الآن",
+        home_signin_btn: "تسجيل الدخول",
+        home_live_ai: "تحليل ذكاء اصطناعي مباشر",
+        home_confidence: "98% دقة",
+        home_spine: "العمود الفقري",
+        home_neutral: "طبيعي",
+        home_neck: "الرقبة",
+        home_tilted: "مائلة",
+        home_score: "النتيجة",
+        home_how: "كيف يعمل",
+        home_step1_label: "رفع فيديو",
+        home_step1_title: "سجل وارفع",
+        home_step1_desc: "سجل نفسك وأنت جالس لمدة 20 ثانية كحد أقصى وارفع الفيديو للتحليل الفوري.",
+        home_step2_label: "تحليل ذكي",
+        home_step2_title: "كشف الوضعية",
+        home_step2_desc: "يستخدم الذكاء الاصطناعي MediaPipe Pose لاكتشاف نقاط الجسم وقياس زوايا الرقبة والظهر بدقة.",
+        home_step3_label: "النتائج",
+        home_step3_title: "تقييم الوضعية",
+        home_step3_desc: "احصل على تقييم مفصل لوضعية الجسم وتوصيات عملية لتحسين صحتك.",
+        // Register
+        reg_title: "إنشاء حساب",
+        reg_subtitle: "انضم إلى PhysioTrack لبدء تحليل وضعيتك",
+        reg_submit: "إنشاء حساب",
+        reg_has_account: "لديك حساب بالفعل؟",
+        reg_signin: "تسجيل الدخول",
+        // Login
+        login_title: "مرحباً بعودتك",
+        login_subtitle: "سجل الدخول إلى حسابك في PhysioTrack",
+        login_submit: "تسجيل الدخول",
+        login_no_account: "ليس لديك حساب؟",
+        login_register: "إنشاء حساب",
+        // Upload
+        upload_breadcrumb: "رفع فيديو",
+        upload_title: "رفع فيديو التمرين",
+        upload_subtitle: "سيقوم الذكاء الاصطناعي بتحليل حركتك وتقديم تعليقات فورية لرحلة تعافيك.",
+        upload_drag: "اسحب وأفلت الفيديو هنا",
+        upload_drag_desc: "التقط حركتك بوضوح من الجانب للحصول على أفضل نتائج التحليل.",
+        upload_duration: "المدة",
+        upload_max_duration: "20 ثانية كحد أقصى",
+        upload_formats: "الصيغ",
+        upload_btn: "رفع الفيديو",
+        upload_analyzing: "جاري التحليل...",
+        upload_tip1_title: "إضاءة جيدة",
+        upload_tip1_desc: "تأكد من أن المنطقة مضاءة جيداً حتى تكون المفاصل والحركات مرئية.",
+        upload_tip2_title: "كاميرا ثابتة",
+        upload_tip2_desc: "استخدم حامل ثلاثي أو اسند هاتفك على سطح ثابت.",
+        upload_tip3_title: "الجسم كامل",
+        upload_tip3_desc: "حاول إبقاء جسمك بالكامل داخل إطار الكاميرا.",
+        // Result
+        result_breadcrumb_postures: "الوضعيات",
+        result_breadcrumb_result: "نتيجة التحليل",
+        result_page_title: "تحليل الوضعية",
+        result_scan_completed: "آخر فحص تم في",
+        result_good: "وضعية جيدة",
+        result_bad: "وضعية سيئة",
+        result_score_label: "تقييم الوضعية العام",
+        result_progress: "تقدم التحليل",
+        result_clinical: "التقييم السريري",
+        result_good_text: "وضعية جلوسك ممتازة. يظهر محاذاة العمود الفقري انحناءً مثالياً، ورقبتك في وضع جيد بالنسبة لجذعك. حافظ على استرخاء كتفيك للحفاظ على هذه النتيجة أثناء ساعات العمل الطويلة.",
+        result_bad_text: "تظهر وضعيتك علامات عدم المحاذاة. فكر في تعديل وضعية جلوسك — حافظ على استقامة ظهرك، واسترخاء كتفيك، ومحاذاة أذنيك فوق كتفيك، وتأكد من أن شاشتك على مستوى العين لتقليل إجهاد الرقبة.",
+        result_new_analysis: "تحليل جديد",
+        result_view_history: "عرض السجل",
+        result_scan_details: "تفاصيل الفحص",
+        result_ai_mapping: "نتائج رسم الجسم بالذكاء الاصطناعي",
+        result_analysis_complete: "اكتمل التحليل",
+        result_cervical: "الفقرات العنقية (الرقبة)",
+        result_thoracic: "الفقرات الصدرية (منتصف الظهر)",
+        result_lumbar: "الفقرات القطنية (أسفل الظهر)",
+        result_optimal: "مثالي",
+        result_check_align: "تحقق من المحاذاة",
+        result_needs_correction: "يحتاج تصحيح",
+        result_check_tilt: "تحقق من الميل",
+        result_recommendations: "توصيات مخصصة",
+        result_ergo_title: "إعداد مريح",
+        result_ergo_desc: "اضبط ارتفاع شاشتك على مستوى العين لراحة الرقبة.",
+        result_break_title: "تذكيرات بالاستراحة",
+        result_break_desc: "خذ استراحة وقوف وتمدد لمدة دقيقتين كل 45 دقيقة.",
+        result_stretch_title: "تمارين إطالة مستهدفة",
+        result_stretch_desc: "جرب تمرين إطالة الصدر عند الباب لفتح الكتفين.",
+        // History
+        history_breadcrumb: "السجل",
+        history_title: "سجل التحليلات",
+        history_subtitle: "تتبع رحلة تعافيك البدني واتجاهات أدائك.",
+        history_new: "تحليل جديد",
+        history_date: "التاريخ",
+        history_analysis: "التحليل",
+        history_score: "النتيجة",
+        history_result: "الحالة",
+        history_action: "الإجراء",
+        history_posture_analysis: "تحليل الوضعية",
+        history_good: "وضعية جيدة",
+        history_bad: "وضعية سيئة",
+        history_view: "عرض التفاصيل",
+        history_showing: "عرض",
+        history_results: "نتائج",
+        history_trend_title: "اتجاه التقدم",
+        history_trend_desc: "تتبع تحسن وضعيتك بمرور الوقت مع التحليل المستمر.",
+        history_sessions_title: "الجلسات النشطة",
+        history_sessions_desc: "إجمالي الجلسات المكتملة منذ بدء رحلة تعافيك.",
+        history_total: "إجمالي التحليلات",
+        history_assess_title: "التقييم",
+        history_assess_desc: "استمر في التحليل بانتظام لتتبع أكثر دقة للوضعية.",
+        history_assess_label: "تحليل الوضعية",
+        history_empty_title: "لا توجد تحليلات بعد",
+        history_empty_desc: "ارفع أول فيديو لك لبدء تحليل الوضعية بالذكاء الاصطناعي وتتبع تقدمك.",
+        history_empty_btn: "رفع فيديو",
+    },
+    en: {
+        nav_home: "Home",
+        nav_upload: "Upload",
+        nav_history: "History",
+        nav_login: "Login",
+        nav_register: "Register",
+        nav_logout: "Logout",
+        footer_copy: "© 2026 PhysioTrack AI. All rights reserved.",
+        footer_privacy: "Privacy Policy",
+        footer_terms: "Terms of Service",
+        footer_support: "Support",
+        reminder_title: "Time to Move!",
+        reminder_desc: "You've been sitting for 30 minutes. Take a quick break to stretch and improve circulation.",
+        reminder_btn: "Got it, I'll move",
+        home_title: "WELCOME TO",
+        home_brand: "PHYSIOTRACK",
+        home_subtitle: "Analyze your posture in seconds using AI-powered video analysis to reduce back pain and improve ergonomics.",
+        home_upload_btn: "Upload Video",
+        home_history_btn: "View History",
+        home_start_btn: "Get Started",
+        home_signin_btn: "Sign In",
+        home_live_ai: "Live AI Analysis",
+        home_confidence: "98% Confidence",
+        home_spine: "Spine",
+        home_neutral: "Neutral",
+        home_neck: "Neck",
+        home_tilted: "Tilted",
+        home_score: "Score",
+        home_how: "How It Works",
+        home_step1_label: "Upload Video",
+        home_step1_title: "Record & Upload",
+        home_step1_desc: "Record yourself sitting for up to 20 seconds and upload the video for instant analysis.",
+        home_step2_label: "AI Analysis",
+        home_step2_title: "Pose Detection",
+        home_step2_desc: "Our AI uses MediaPipe Pose to detect body landmarks and measure neck/back angles precisely.",
+        home_step3_label: "Get Results",
+        home_step3_title: "Posture Score",
+        home_step3_desc: "Receive a detailed posture score and actionable recommendations to improve your health.",
+        reg_title: "Create Account",
+        reg_subtitle: "Join PhysioTrack to start analyzing your posture",
+        reg_submit: "Create Account",
+        reg_has_account: "Already have an account?",
+        reg_signin: "Sign in",
+        login_title: "Welcome Back",
+        login_subtitle: "Sign in to your PhysioTrack account",
+        login_submit: "Sign In",
+        login_no_account: "Don't have an account?",
+        login_register: "Register",
+        upload_breadcrumb: "Upload Video",
+        upload_title: "Upload Exercise Video",
+        upload_subtitle: "Our AI will analyze your form and provide real-time feedback for your recovery journey.",
+        upload_drag: "Drag and drop video here",
+        upload_drag_desc: "Capture your movement clearly from a side view for the best analysis results.",
+        upload_duration: "Duration",
+        upload_max_duration: "Max 20 seconds",
+        upload_formats: "Formats",
+        upload_btn: "Upload Video",
+        upload_analyzing: "Analyzing...",
+        upload_tip1_title: "Good Lighting",
+        upload_tip1_desc: "Ensure the area is well-lit so joints and movements are visible.",
+        upload_tip2_title: "Stable Camera",
+        upload_tip2_desc: "Use a tripod or prop your phone against a stable surface.",
+        upload_tip3_title: "Full Body",
+        upload_tip3_desc: "Try to keep your entire body within the camera frame.",
+        result_breadcrumb_postures: "Postures",
+        result_breadcrumb_result: "Analysis Result",
+        result_page_title: "Postural Analysis",
+        result_scan_completed: "Latest scan completed on",
+        result_good: "Good Posture",
+        result_bad: "Bad Posture",
+        result_score_label: "Overall Posture Score",
+        result_progress: "Analysis Progress",
+        result_clinical: "Clinical Assessment",
+        result_good_text: "Your sitting posture is excellent. Your spinal alignment shows optimal curvature, and your neck is well-positioned relative to your torso. Keep your shoulders relaxed to maintain this score during long work hours.",
+        result_bad_text: "Your posture shows signs of misalignment. Consider adjusting your seating position — keep your back straight, shoulders relaxed, ears aligned over shoulders, and ensure your monitor is at eye level to reduce neck strain.",
+        result_new_analysis: "New Analysis",
+        result_view_history: "View History",
+        result_scan_details: "Scan Details",
+        result_ai_mapping: "AI Body Mapping Results",
+        result_analysis_complete: "Analysis Complete",
+        result_cervical: "Cervical (Neck)",
+        result_thoracic: "Thoracic (Mid-back)",
+        result_lumbar: "Lumbar (Lower-back)",
+        result_optimal: "Optimal",
+        result_check_align: "Check Alignment",
+        result_needs_correction: "Needs Correction",
+        result_check_tilt: "Check Tilt",
+        result_recommendations: "Personalized Recommendations",
+        result_ergo_title: "Ergonomic Setup",
+        result_ergo_desc: "Adjust your monitor height to eye level for neck relief.",
+        result_break_title: "Break Reminders",
+        result_break_desc: "Take a 2-minute standing stretch every 45 minutes.",
+        result_stretch_title: "Targeted Stretch",
+        result_stretch_desc: 'Try the "Doorway Chest Stretch" to open up shoulders.',
+        history_breadcrumb: "History",
+        history_title: "Analysis History",
+        history_subtitle: "Track your physical recovery journey and performance trends.",
+        history_new: "New Analysis",
+        history_date: "Date",
+        history_analysis: "Analysis",
+        history_score: "Score",
+        history_result: "Result",
+        history_action: "Action",
+        history_posture_analysis: "Posture Analysis",
+        history_good: "Good Posture",
+        history_bad: "Bad Posture",
+        history_view: "View Details",
+        history_showing: "Showing",
+        history_results: "results",
+        history_trend_title: "Progress Trend",
+        history_trend_desc: "Track your posture improvements over time with consistent analysis.",
+        history_sessions_title: "Active Sessions",
+        history_sessions_desc: "Total sessions completed since starting your recovery journey.",
+        history_total: "total analyses",
+        history_assess_title: "Assessment",
+        history_assess_desc: "Keep analyzing regularly for more accurate posture tracking.",
+        history_assess_label: "Posture Analysis",
+        history_empty_title: "No analyses yet",
+        history_empty_desc: "Upload your first video to get started with AI-powered posture analysis and begin tracking your progress.",
+        history_empty_btn: "Upload Video",
+    }
+};
+
+function getCurrentLang() {
+    return localStorage.getItem('physiotrack_lang') || 'en';
+}
+
+function setLanguage(lang) {
+    localStorage.setItem('physiotrack_lang', lang);
+    const html = document.documentElement;
+
+    if (lang === 'ar') {
+        html.setAttribute('dir', 'rtl');
+        html.setAttribute('lang', 'ar');
+        document.getElementById('langLabel').textContent = 'English';
+    } else {
+        html.setAttribute('dir', 'ltr');
+        html.setAttribute('lang', 'en');
+        document.getElementById('langLabel').textContent = 'العربية';
+    }
+
+    // Translate all elements with data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+            el.textContent = translations[lang][key];
+        }
+    });
+
+    // Translate placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[lang] && translations[lang][key]) {
+            el.placeholder = translations[lang][key];
+        }
+    });
+}
+
+function toggleLanguage() {
+    const current = getCurrentLang();
+    setLanguage(current === 'en' ? 'ar' : 'en');
+}
+
+// Apply saved language on page load
+document.addEventListener('DOMContentLoaded', () => {
+    setLanguage(getCurrentLang());
+});
+</script>
+
+<script>
+    // Auto-dismiss alerts after 5 seconds
+    document.querySelectorAll('[onclick]').forEach(btn => {
+        const alert = btn.parentElement;
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-10px)';
+            alert.style.transition = 'all 0.3s ease';
+            setTimeout(() => alert.remove(), 300);
+        }, 5000);
+    });
+</script>
+
+<!-- Move Reminder System -->
+<script>
+    const REMINDER_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+    function resetReminderTimer() {
+        localStorage.setItem('physiotrack_last_movement', Date.now().toString());
+    }
+
+    function checkMovementReminder() {
+        const lastMovement = localStorage.getItem('physiotrack_last_movement');
+        if (!lastMovement) {
+            resetReminderTimer();
+            return;
+        }
+
+        const elapsed = Date.now() - parseInt(lastMovement, 10);
+        if (elapsed >= REMINDER_INTERVAL_MS) {
+            document.getElementById('moveReminderModal').classList.remove('hidden');
+        }
+    }
+
+    function dismissReminder() {
+        document.getElementById('moveReminderModal').classList.add('hidden');
+        resetReminderTimer();
+    }
+
+    // Initialize timer on load and check every minute
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('physiotrack_last_movement')) {
+            resetReminderTimer();
+        }
+        // Check every minute
+        setInterval(checkMovementReminder, 60000);
+    });
+</script>
+</body>
+</html>

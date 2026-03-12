@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PhysioTrack - Professional Physical Therapy Tracking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#3713ec",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#131022",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 glass-nav border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between items-center h-16">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<div class="bg-primary p-1.5 rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xl">exercise</span>
+</div>
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Physio<span class="text-primary">Track</span></span>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center space-x-8">
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors" href="#">Home</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors" href="#">Upload</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-400 dark:hover:text-white transition-colors" href="#">History</a>
+</nav>
+<!-- Auth Buttons -->
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+                        Login
+                    </button>
+<button class="px-4 py-2 text-sm font-semibold text-white bg-primary hover:bg-opacity-90 rounded-lg shadow-sm shadow-primary/20 transition-all">
+                        Logout
+                    </button>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-grow">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Breadcrumbs / Secondary Nav Example -->
+<div class="mb-8 flex items-center gap-2 text-sm text-slate-500">
+<span class="material-symbols-outlined text-sm">home</span>
+<span>/</span>
+<span class="font-medium text-slate-900 dark:text-slate-200">Dashboard</span>
+</div>
+<!-- Page Header Placeholder -->
+<div class="mb-10">
+<h1 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Welcome to PhysioTrack</h1>
+<p class="mt-2 text-lg text-slate-600 dark:text-slate-400">Manage your physical therapy progress with data-driven insights.</p>
+</div>
+<!-- Content Block -->
+<div class="relative min-h-[400px]">
+                {% block content %}
+                <!-- Default Placeholder State -->
+<div class="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
+<div class="size-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-primary text-3xl">add_chart</span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Start your recovery journey</h3>
+<p class="text-slate-600 dark:text-slate-400 text-center max-w-sm mb-8">
+                        This is the main content area. Use the upload tool to analyze your latest session or check your history for progress.
+                    </p>
+<button class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:translate-y-[-1px] transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">upload_file</span>
+<span>Get Started</span>
+</button>
+</div>
+                {% endblock %}
+            </div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="border-t border-slate-200 dark:border-slate-800 py-8 bg-white dark:bg-background-dark">
+<div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="text-slate-500 text-sm">
+                © 2024 PhysioTrack. All rights reserved.
+            </div>
+<div class="flex gap-6">
+<a class="text-slate-400 hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">description</span></a>
+<a class="text-slate-400 hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">help</span></a>
+<a class="text-slate-400 hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">mail</span></a>
+</div>
+</div>
+</footer>
+</body></html>

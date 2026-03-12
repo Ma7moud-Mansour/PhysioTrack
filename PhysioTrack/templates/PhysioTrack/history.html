@@ -1,0 +1,168 @@
+{% extends 'PhysioTrack/base.html' %}
+{% block title %}Analysis History — PhysioTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto w-full px-4 md:px-10 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 mb-6 text-sm">
+        <a class="text-slate-500 hover:text-primary transition-colors" href="{% url 'home' %}" data-i18n="nav_home">Home</a>
+        <span class="material-symbols-outlined text-[16px] text-slate-400">chevron_right</span>
+        <span class="text-slate-900 font-medium" data-i18n="history_breadcrumb">History</span>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+        <div class="flex flex-col gap-1">
+            <h1 class="text-slate-900 text-3xl font-black leading-tight tracking-tight" data-i18n="history_title">Analysis History</h1>
+            <p class="text-slate-500 text-base" data-i18n="history_subtitle">Track your physical recovery journey and performance trends.</p>
+        </div>
+        <div class="flex gap-3 w-full md:w-auto">
+            <a href="{% url 'upload' %}" class="flex-1 md:flex-none flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                <span data-i18n="history_new">New Analysis</span>
+            </a>
+        </div>
+    </div>
+
+    {% if videos %}
+    <!-- Table Card -->
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left rtl:text-right border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50">
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                            <div class="flex items-center gap-1">
+                                <span data-i18n="history_date">Date</span>
+                                <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
+                            </div>
+                        </th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200" data-i18n="history_analysis">Analysis</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200" data-i18n="history_score">Score</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200" data-i18n="history_result">Result</th>
+                        <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 text-right rtl:text-left" data-i18n="history_action">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for v in videos %}
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-slate-900">{{ v.created_at|date:"M d, Y" }}</span>
+                                <span class="text-xs text-slate-500">{{ v.created_at|date:"g:i A" }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="size-8 rounded bg-primary/10 flex items-center justify-center text-primary">
+                                    <span class="material-symbols-outlined text-[20px]">accessibility_new</span>
+                                </div>
+                                <span class="text-sm font-medium text-slate-700" data-i18n="history_posture_analysis">Posture Analysis</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2">
+                                <div class="w-12 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    {% if v.score >= 50 %}
+                                    <div class="bg-emerald-500 h-full rounded-full" style="width: {{ v.score }}%"></div>
+                                    {% else %}
+                                    <div class="bg-rose-500 h-full rounded-full" style="width: {{ v.score }}%"></div>
+                                    {% endif %}
+                                </div>
+                                {% if v.score >= 50 %}
+                                <span class="text-sm font-bold text-emerald-600">{{ v.score|floatformat:0 }}%</span>
+                                {% else %}
+                                <span class="text-sm font-bold text-rose-600">{{ v.score|floatformat:0 }}%</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if v.result == 'Good Posture' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700" data-i18n="history_good">
+                                Good Posture
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700" data-i18n="history_bad">
+                                Bad Posture
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right rtl:text-left">
+                            <a href="{% url 'result' v.pk %}" class="text-primary hover:text-primary/80 font-bold text-sm inline-flex items-center gap-1">
+                                <span data-i18n="history_view">View Details</span>
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Table Footer -->
+        <div class="px-6 py-4 flex items-center justify-between border-t border-slate-200 bg-slate-50/30">
+            <div class="text-sm text-slate-500">
+                <span data-i18n="history_showing">Showing</span> <span class="font-medium text-slate-900">{{ videos|length }}</span> <span data-i18n="history_results">results</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insights Cards -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-primary/5 border border-primary/20 p-6 rounded-xl">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="material-symbols-outlined text-primary">trending_up</span>
+                <h3 class="font-bold text-slate-900" data-i18n="history_trend_title">Progress Trend</h3>
+            </div>
+            <p class="text-sm text-slate-600 mb-2" data-i18n="history_trend_desc">Track your posture improvements over time with consistent analysis.</p>
+            <div class="w-full h-16 bg-primary/10 rounded-lg flex items-end justify-between p-2 gap-1 overflow-hidden">
+                <div class="w-full bg-primary/40 h-[30%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[45%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[40%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[65%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[60%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[85%] rounded-t-sm"></div>
+                <div class="w-full bg-primary/40 h-[80%] rounded-t-sm"></div>
+                <div class="w-full bg-primary h-[95%] rounded-t-sm"></div>
+            </div>
+        </div>
+        <div class="bg-white border border-slate-200 p-6 rounded-xl">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="material-symbols-outlined text-amber-500">schedule</span>
+                <h3 class="font-bold text-slate-900" data-i18n="history_sessions_title">Active Sessions</h3>
+            </div>
+            <p class="text-sm text-slate-600 mb-2" data-i18n="history_sessions_desc">Total sessions completed since starting your recovery journey.</p>
+            <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-black text-slate-900">{{ videos|length }}</span>
+                <span class="text-xs font-bold text-emerald-500" data-i18n="history_total">total analyses</span>
+            </div>
+        </div>
+        <div class="bg-white border border-slate-200 p-6 rounded-xl">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="material-symbols-outlined text-emerald-500">verified</span>
+                <h3 class="font-bold text-slate-900" data-i18n="history_assess_title">Assessment</h3>
+            </div>
+            <p class="text-sm text-slate-600 mb-2" data-i18n="history_assess_desc">Keep analyzing regularly for more accurate posture tracking.</p>
+            <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-primary" data-i18n="history_assess_label">Posture Analysis</span>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="flex flex-col items-center justify-center p-16 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div class="size-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <span class="material-symbols-outlined text-primary text-4xl">add_chart</span>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900 mb-2" data-i18n="history_empty_title">No analyses yet</h3>
+        <p class="text-slate-500 text-center max-w-sm mb-8" data-i18n="history_empty_desc">
+            Upload your first video to get started with AI-powered posture analysis and begin tracking your progress.
+        </p>
+        <a href="{% url 'upload' %}" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:translate-y-[-1px] transition-all active:scale-[0.98]">
+            <span class="material-symbols-outlined">upload_file</span>
+            <span data-i18n="history_empty_btn">Upload Video</span>
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

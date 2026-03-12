@@ -1,0 +1,275 @@
+{% extends 'PhysioTrack/base.html' %}
+{% load static %}
+{% block title %}Analysis Result — PhysioTrack{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 mb-6 text-sm">
+        <a class="text-slate-500 hover:text-primary transition-colors" href="{% url 'history' %}" data-i18n="result_breadcrumb_postures">Postures</a>
+        <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
+        <span class="text-slate-900 font-medium" data-i18n="result_breadcrumb_result">Analysis Result</span>
+    </nav>
+
+    <div class="mb-8">
+        <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight" data-i18n="result_page_title">Postural Analysis</h1>
+        <p class="text-slate-500 mt-2"><span data-i18n="result_scan_completed">Latest scan completed on</span> {{ video.created_at|date:"M d, Y" }} — {{ video.created_at|date:"g:i A" }}</p>
+    </div>
+
+    <!-- Main Results Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Score Card -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-8">
+                <div class="flex items-start justify-between">
+                    <div>
+                        {% if video.result == 'Good Posture' %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide" data-i18n="result_good">
+                            Good Posture
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 uppercase tracking-wide" data-i18n="result_bad">
+                            Bad Posture
+                        </span>
+                        {% endif %}
+                        <h3 class="mt-4 text-slate-500 font-medium" data-i18n="result_score_label">Overall Posture Score</h3>
+                        <div class="flex items-baseline gap-2 mt-2">
+                            <span class="text-6xl font-black text-slate-900">{{ video.score|floatformat:0 }}</span>
+                            <span class="text-2xl font-bold text-slate-400">%</span>
+                        </div>
+                    </div>
+                    <div class="hidden md:block">
+                        {% if video.result == 'Good Posture' %}
+                        <div class="size-24 rounded-full border-[6px] border-emerald-500/20 flex items-center justify-center relative">
+                            <svg class="size-full absolute -rotate-90">
+                                <circle class="text-emerald-500" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor"
+                                    stroke-dasharray="263.89" stroke-dashoffset="{{ dashoffset }}" stroke-width="6"></circle>
+                            </svg>
+                            <span class="material-symbols-outlined text-emerald-500 text-3xl">done_all</span>
+                        </div>
+                        {% else %}
+                        <div class="size-24 rounded-full border-[6px] border-red-500/20 flex items-center justify-center relative">
+                            <svg class="size-full absolute -rotate-90">
+                                <circle class="text-red-500" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor"
+                                    stroke-dasharray="263.89" stroke-dashoffset="132" stroke-width="6"></circle>
+                            </svg>
+                            <span class="material-symbols-outlined text-red-500 text-3xl">warning</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="mt-8">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-slate-600" data-i18n="result_progress">Analysis Progress</span>
+                        <span class="text-sm font-bold text-primary">{{ video.score|floatformat:0 }}/100</span>
+                    </div>
+                    <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: {{ video.score }}%"></div>
+                    </div>
+                </div>
+
+                <!-- Clinical Assessment -->
+                <div class="mt-8 p-6 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="flex gap-4">
+                        <div class="size-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined">info</span>
+                        </div>
+                        <div>
+                            <p class="text-slate-900 font-semibold leading-normal" data-i18n="result_clinical">Clinical Assessment</p>
+                            {% if video.result == 'Good Posture' %}
+                            <p class="text-slate-600 text-sm mt-1 leading-relaxed" data-i18n="result_good_text">
+                                Your sitting posture is excellent. Your spinal alignment shows optimal curvature, and your neck is well-positioned relative to your torso. Keep your shoulders relaxed to maintain this score during long work hours.
+                            </p>
+                            {% else %}
+                            <p class="text-slate-600 text-sm mt-1 leading-relaxed" data-i18n="result_bad_text">
+                                Your posture shows signs of misalignment. Consider adjusting your seating position — keep your back straight, shoulders relaxed, ears aligned over shoulders, and ensure your monitor is at eye level to reduce neck strain.
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Action Buttons -->
+            <div class="bg-slate-50 px-8 py-4 flex flex-wrap gap-4 border-t border-slate-200">
+                <a href="{% url 'upload' %}" class="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform" data-i18n="result_new_analysis">
+                    New Analysis
+                </a>
+                <a href="{% url 'history' %}" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg hover:bg-slate-100 transition-colors" data-i18n="result_view_history">
+                    View History
+                </a>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="p-6">
+                <h4 class="font-bold text-slate-900" data-i18n="result_scan_details">Scan Details</h4>
+                <p class="text-xs text-slate-500 mt-1" data-i18n="result_ai_mapping">AI Body Mapping Results</p>
+            </div>
+            <div class="flex-1 bg-slate-100 relative min-h-[200px] flex items-center justify-center">
+                <div class="flex flex-col items-center gap-4 py-8">
+                    <span class="material-symbols-outlined text-[80px] text-slate-300">accessibility_new</span>
+                    <div class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold" data-i18n="result_analysis_complete">
+                        Analysis Complete
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500" data-i18n="result_cervical">Cervical (Neck)</span>
+                        {% if video.score >= 60 %}
+                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                        {% else %}
+                        <span class="text-amber-500 font-bold" data-i18n="result_check_align">Check Alignment</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500" data-i18n="result_thoracic">Thoracic (Mid-back)</span>
+                        {% if video.score >= 50 %}
+                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                        {% else %}
+                        <span class="text-red-500 font-bold" data-i18n="result_needs_correction">Needs Correction</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-500" data-i18n="result_lumbar">Lumbar (Lower-back)</span>
+                        {% if video.score >= 70 %}
+                        <span class="text-emerald-500 font-bold" data-i18n="result_optimal">Optimal</span>
+                        {% else %}
+                        <span class="text-amber-500 font-bold" data-i18n="result_check_tilt">Check Tilt</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendations Section -->
+    <div class="mt-12">
+        <h2 class="text-xl font-bold text-slate-900 mb-6" data-i18n="result_recommendations">Personalized Recommendations</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-5 bg-white rounded-xl border border-slate-200 hover:border-primary/50 transition-colors cursor-pointer group">
+                <div class="size-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined">chair</span>
+                </div>
+                <h5 class="font-bold text-sm mb-1" data-i18n="result_ergo_title">Ergonomic Setup</h5>
+                <p class="text-xs text-slate-500 leading-normal" data-i18n="result_ergo_desc">Adjust your monitor height to eye level for neck relief.</p>
+            </div>
+            <div class="p-5 bg-white rounded-xl border border-slate-200 hover:border-primary/50 transition-colors cursor-pointer group">
+                <div class="size-10 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined">timer</span>
+                </div>
+                <h5 class="font-bold text-sm mb-1" data-i18n="result_break_title">Break Reminders</h5>
+                <p class="text-xs text-slate-500 leading-normal" data-i18n="result_break_desc">Take a 2-minute standing stretch every 45 minutes.</p>
+            </div>
+            <div class="p-5 bg-white rounded-xl border border-slate-200 hover:border-primary/50 transition-colors cursor-pointer group">
+                <div class="size-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <span class="material-symbols-outlined">self_improvement</span>
+                </div>
+                <h5 class="font-bold text-sm mb-1" data-i18n="result_stretch_title">Targeted Stretch</h5>
+                <p class="text-xs text-slate-500 leading-normal" data-i18n="result_stretch_desc">Try the "Doorway Chest Stretch" to open up shoulders.</p>
+            </div>
+        </div>
+    </div>
+
+    {% load static %}
+
+    <!-- Posture Visualization Section -->
+    {% if visualization_image %}
+    <div class="visualization-section mt-12 mb-8 text-center">
+        <h2 class="text-xl font-bold text-slate-900 mb-4" data-i18n="result_vis_title">Posture Visualization</h2>
+        <div class="inline-block relative">
+            <img src="/media/{{ visualization_image }}" class="analysis-image">
+        </div>
+        <p class="analysis-caption text-slate-500" data-i18n="result_vis_caption">
+            Red lines indicate detected posture issues.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Recommended Stretches Section -->
+    {% if issues %}
+    <div class="stretch-section mt-12">
+        <div class="stretch-header">
+            <span class="material-symbols-outlined stretch-header-icon">fitness_center</span>
+            <div>
+                <h2 class="text-xl font-bold text-slate-900" data-i18n="result_stretches_title">Recommended Stretches</h2>
+                <p class="text-sm text-slate-500 mt-1" data-i18n="result_stretches_desc">Based on your analysis, try these exercises to improve your posture.</p>
+            </div>
+        </div>
+        <div class="stretch-grid">
+            {% if "forward_head" in issues %}
+            <!-- Neck Stretch Card -->
+            <div class="stretch-card">
+                <div class="stretch-card-img">
+                    <img src="{% static 'images/exercises/neck_stretch.png' %}" alt="Neck Stretch Exercise">
+                </div>
+                <div class="stretch-card-body">
+                    <span class="stretch-badge stretch-badge--neck">
+                        <span class="material-symbols-outlined" style="font-size:14px;">swap_horiz</span>
+                        Neck
+                    </span>
+                    <h3 class="stretch-card-title" data-i18n="stretch_neck_title">Neck Stretch</h3>
+                    <p class="stretch-card-desc" data-i18n="stretch_neck_desc">Tilt your head toward one shoulder and hold for 10 seconds. Repeat on both sides.</p>
+                    <div class="stretch-card-footer">
+                        <span class="stretch-duration">
+                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
+                            10 sec per side
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chest Opener Stretch Card -->
+            <div class="stretch-card">
+                <div class="stretch-card-img">
+                    <img src="{% static 'images/exercises/chest_opener.png' %}" alt="Chest Opener Stretch">
+                </div>
+                <div class="stretch-card-body">
+                    <span class="stretch-badge stretch-badge--chest">
+                        <span class="material-symbols-outlined" style="font-size:14px;">open_with</span>
+                        Chest
+                    </span>
+                    <h3 class="stretch-card-title" data-i18n="stretch_chest_title">Chest Opener Stretch</h3>
+                    <p class="stretch-card-desc" data-i18n="stretch_chest_desc">Clasp hands behind your back and open your chest. Hold for 15 seconds.</p>
+                    <div class="stretch-card-footer">
+                        <span class="stretch-duration">
+                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
+                            15 sec
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if "rounded_back" in issues %}
+            <!-- Seated Back Stretch Card -->
+            <div class="stretch-card">
+                <div class="stretch-card-img">
+                    <img src="{% static 'images/exercises/back_stretch.png' %}" alt="Seated Back Stretch">
+                </div>
+                <div class="stretch-card-body">
+                    <span class="stretch-badge stretch-badge--back">
+                        <span class="material-symbols-outlined" style="font-size:14px;">accessibility_new</span>
+                        Back
+                    </span>
+                    <h3 class="stretch-card-title" data-i18n="stretch_back_title">Seated Back Stretch</h3>
+                    <p class="stretch-card-desc" data-i18n="stretch_back_desc">Sit upright and gently arch your back backward. Hold for 15 seconds.</p>
+                    <div class="stretch-card-footer">
+                        <span class="stretch-duration">
+                            <span class="material-symbols-outlined" style="font-size:16px;">timer</span>
+                            15 sec
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
