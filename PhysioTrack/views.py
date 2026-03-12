@@ -83,6 +83,7 @@ def upload_image(request):
             # Store detected posture issues in session for the result page
             request.session['posture_issues'] = analysis.get('issues', [])
             request.session['visualization_image'] = analysis.get('visualization_image')
+            request.session['posture_message'] = analysis.get('message')
 
             messages.success(request, 'Image uploaded and analyzed successfully!')
             return redirect('result', pk=posture_image.pk)
@@ -103,11 +104,13 @@ def result_view(request, pk):
     posture_video = get_object_or_404(PostureVideo, pk=pk, user=request.user)
     issues = request.session.pop('posture_issues', [])
     visualization_image = request.session.pop('visualization_image', None)
+    message = request.session.pop('posture_message', None)
     
     return render(request, 'PhysioTrack/result.html', {
         'video': posture_video,
         'issues': issues,
         'visualization_image': visualization_image,
+        'message': message,
     })
 
 

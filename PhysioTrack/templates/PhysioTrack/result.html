@@ -27,6 +27,10 @@
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide" data-i18n="result_good">
                             Good Posture
                         </span>
+                        {% elif video.result == 'Invalid Image' %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 uppercase tracking-wide">
+                            Invalid Image
+                        </span>
                         {% else %}
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 uppercase tracking-wide" data-i18n="result_bad">
                             Bad Posture
@@ -34,8 +38,12 @@
                         {% endif %}
                         <h3 class="mt-4 text-slate-500 font-medium" data-i18n="result_score_label">Overall Posture Score</h3>
                         <div class="flex items-baseline gap-2 mt-2">
+                            {% if video.score is not None %}
                             <span class="text-6xl font-black text-slate-900">{{ video.score|floatformat:0 }}</span>
                             <span class="text-2xl font-bold text-slate-400">%</span>
+                            {% else %}
+                            <span class="text-6xl font-black text-slate-900">N/A</span>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="hidden md:block">
@@ -46,6 +54,14 @@
                                     stroke-dasharray="263.89" stroke-dashoffset="{{ dashoffset }}" stroke-width="6"></circle>
                             </svg>
                             <span class="material-symbols-outlined text-emerald-500 text-3xl">done_all</span>
+                        </div>
+                        {% elif video.result == 'Invalid Image' %}
+                        <div class="size-24 rounded-full border-[6px] border-amber-500/20 flex items-center justify-center relative">
+                            <svg class="size-full absolute -rotate-90">
+                                <circle class="text-amber-500" cx="48" cy="48" fill="transparent" r="42" stroke="currentColor"
+                                    stroke-dasharray="263.89" stroke-dashoffset="0" stroke-width="6"></circle>
+                            </svg>
+                            <span class="material-symbols-outlined text-amber-500 text-3xl">question_mark</span>
                         </div>
                         {% else %}
                         <div class="size-24 rounded-full border-[6px] border-red-500/20 flex items-center justify-center relative">
@@ -63,24 +79,28 @@
                 <div class="mt-8">
                     <div class="flex justify-between items-center mb-2">
                         <span class="text-sm font-medium text-slate-600" data-i18n="result_progress">Analysis Progress</span>
-                        <span class="text-sm font-bold text-primary">{{ video.score|floatformat:0 }}/100</span>
+                        <span class="text-sm font-bold text-primary">{% if video.score is not None %}{{ video.score|floatformat:0 }}/100{% else %}N/A{% endif %}</span>
                     </div>
                     <div class="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: {{ video.score }}%"></div>
+                        <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: {{ video.score|default:0 }}%"></div>
                     </div>
                 </div>
 
                 <!-- Clinical Assessment -->
                 <div class="mt-8 p-6 bg-slate-50 rounded-xl border border-slate-100">
                     <div class="flex gap-4">
-                        <div class="size-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                            <span class="material-symbols-outlined">info</span>
+                        <div class="size-10 shrink-0 rounded-full {% if video.result == 'Invalid Image' %}bg-amber-100 text-amber-600{% else %}bg-primary/10 text-primary{% endif %} flex items-center justify-center">
+                            <span class="material-symbols-outlined">{% if video.result == 'Invalid Image' %}warning{% else %}info{% endif %}</span>
                         </div>
                         <div>
                             <p class="text-slate-900 font-semibold leading-normal" data-i18n="result_clinical">Clinical Assessment</p>
                             {% if video.result == 'Good Posture' %}
                             <p class="text-slate-600 text-sm mt-1 leading-relaxed" data-i18n="result_good_text">
                                 Your sitting posture is excellent. Your spinal alignment shows optimal curvature, and your neck is well-positioned relative to your torso. Keep your shoulders relaxed to maintain this score during long work hours.
+                            </p>
+                            {% elif video.result == 'Invalid Image' %}
+                            <p class="text-slate-600 text-sm mt-1 leading-relaxed text-amber-900">
+                                {{ message|default:"The uploaded image is not suitable for posture analysis. Please upload a clearer photo of your sitting posture." }}
                             </p>
                             {% else %}
                             <p class="text-slate-600 text-sm mt-1 leading-relaxed" data-i18n="result_bad_text">

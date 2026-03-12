@@ -165,7 +165,13 @@ def analyze_posture(image_path):
     
     if frame is None:
         print("ERROR: Could not open image file.")
-        return {"result": "Bad Posture", "score": 0.0, "issues": ["image_error"], "visualization_image": None}
+        return {
+            "result": "Invalid Image",
+            "score": None,
+            "issues": ["image_error"],
+            "message": "The uploaded image is not suitable for posture analysis. Please upload a clearer photo showing your full upper body while sitting.",
+            "visualization_image": None
+        }
 
     frame_height, frame_width = frame.shape[:2]
     print(f"RESOLUTION: {frame_width}x{frame_height}")
@@ -181,96 +187,130 @@ def analyze_posture(image_path):
     # verbose=False suppresses console output from YOLO
     results = _yolo_model(frame, verbose=False)
 
-    # Check if any person was detected with keypoints
-    has_keypoints = (
-        results[0].keypoints is not None
-        and len(results[0].keypoints.xy) > 0
-    )
-    print(f"  Pose result: {has_keypoints}")
+    # Check if a person is detected using boxes
+    if len(results[0].boxes) == 0:
+        print("  Pose result: No person detected in the image.")
+        return {
+            "result": "Invalid Image",
+            "score": None,
+            "issues": ["no_person_detected"],
+            "message": "No person was detected in the image. Please upload a clearer photo showing your upper body while sitting.",
+            "visualization_image": None
+        }
 
-    if has_keypoints:
-        print("  LANDMARKS DETECTED")
+    # Check if any keypoints exist for the detected person
+    if results[0].keypoints is None or len(results[0].keypoints.xy) == 0:
+        print("  Pose result: Person detected but no keypoints found.")
+        return {
+            "result": "Invalid Image",
+            "score": None,
+            "issues": ["missing_keypoints"],
+            "message": "No person was detected in the image. Please upload a clearer photo showing your upper body while sitting.",
+            "visualization_image": None
+        }
 
-        # [YOLOv8] Extract keypoints for the first detected person
-        # keypoints.xy shape: (num_persons, 17, 2) — pixel coordinates
-        kp = results[0].keypoints.xy[0]
+    print("  LANDMARKS DETECTED")
 
-        # ── [YOLOv8] COCO keypoint extraction ──
-        # Map YOLO keypoints to required landmarks
-        try:
-            nose = _get_yolo_keypoint(kp, _KP_NOSE)
-            left_shoulder = _get_yolo_keypoint(kp, _KP_LEFT_SHOULDER)
-            right_shoulder = _get_yolo_keypoint(kp, _KP_RIGHT_SHOULDER)
-            left_hip = _get_yolo_keypoint(kp, _KP_LEFT_HIP)
-            right_hip = _get_yolo_keypoint(kp, _KP_RIGHT_HIP)
-            left_knee = _get_yolo_keypoint(kp, _KP_LEFT_KNEE)
-            right_knee = _get_yolo_keypoint(kp, _KP_RIGHT_KNEE)
+    # [YOLOv8] Extract keypoints for the first detected person
+    # keypoints.xy shape: (num_persons, 17, 2) — pixel coordinates
+    kp = results[0].keypoints.xy[0]
 
-            # [YOLOv8] COCO format does not have a reliable "ear" keypoint
-            # for posture analysis. Use nose as the head reference point
-            # (approximates ear position for neck angle calculation).
-            ear = nose
+    # Validate if all keypoint coordinates are just zeroed out
+    if kp.sum() == 0:
+        print("  Pose result: All keypoints are empty (0,0).")
+        return {
+            "result": "Invalid Image",
+            "score": None,
+            "issues": ["missing_keypoints"],
+            "message": "No person was detected in the image. Please upload a clearer photo showing your upper body while sitting.",
+            "visualization_image": None
+        }
 
-            # Bilateral midpoints for stability
-            shoulder = _midpoint(left_shoulder, right_shoulder)
-            hip = _midpoint(left_hip, right_hip)
-            knee = _midpoint(left_knee, right_knee)
+    # ── [YOLOv8] COCO keypoint extraction ──
+    # Map YOLO keypoints to required landmarks
+    try:
+        nose = _get_yolo_keypoint(kp, _KP_NOSE)
+        left_shoulder = _get_yolo_keypoint(kp, _KP_LEFT_SHOULDER)
+        right_shoulder = _get_yolo_keypoint(kp, _KP_RIGHT_SHOULDER)
+        left_hip = _get_yolo_keypoint(kp, _KP_LEFT_HIP)
+        right_hip = _get_yolo_keypoint(kp, _KP_RIGHT_HIP)
+        left_knee = _get_yolo_keypoint(kp, _KP_LEFT_KNEE)
+        right_knee = _get_yolo_keypoint(kp, _KP_RIGHT_KNEE)
 
-            # Skip if any required landmark is missing
-            if any(pt is None for pt in [ear, shoulder, hip, knee]):
-                print("  Skipping: one or more keypoints not detected")
-                return {"result": "Bad Posture", "score": 0.0, "issues": ["missing_keypoints"], "visualization_image": None}
+        # [YOLOv8] COCO format does not have a reliable "ear" keypoint
+        # for posture analysis. Use nose as the head reference point
+        # (approximates ear position for neck angle calculation).
+        ear = nose
 
-            # Neck angle: ear → shoulder → hip
-            neck_angle = _calculate_angle(ear, shoulder, hip)
+        # Bilateral midpoints for stability
+        shoulder = _midpoint(left_shoulder, right_shoulder)
+        hip = _midpoint(left_hip, right_hip)
+        knee = _midpoint(left_knee, right_knee)
 
-            # Back angle: shoulder → hip → knee
-            back_angle = _calculate_angle(shoulder, hip, knee)
+        # Skip if any required landmark is missing
+        if any(pt is None for pt in [ear, shoulder, hip, knee]):
+            print("  Skipping: one or more keypoints not detected")
+            return {
+                "result": "Invalid Image",
+                "score": None,
+                "issues": ["missing_keypoints"],
+                "message": "The uploaded image is not suitable for posture analysis. Please upload a clearer photo showing your full upper body while sitting.",
+                "visualization_image": None
+            }
 
-            # Scoring logic:
-            # Good neck angle: ~135-180 degrees (upright)
-            # Good back angle: ~145-180 degrees (straight back)
-            neck_score = _angle_to_score(neck_angle, ideal_min=135, ideal_max=180)
-            back_score = _angle_to_score(back_angle, ideal_min=145, ideal_max=180)
+        # Neck angle: ear → shoulder → hip
+        neck_angle = _calculate_angle(ear, shoulder, hip)
 
-            # Combined score (neck 50%, back 50%)
-            final_score = (neck_score * 0.5) + (back_score * 0.5)
+        # Back angle: shoulder → hip → knee
+        back_angle = _calculate_angle(shoulder, hip, knee)
 
-            # ── Detect posture issues based on angles ──
-            if neck_angle < 135:
-                issues.append("forward_head")
-            if back_angle < 145:
-                issues.append("rounded_back")
+        # Scoring logic:
+        # Good neck angle: ~135-180 degrees (upright)
+        # Good back angle: ~145-180 degrees (straight back)
+        neck_score = _angle_to_score(neck_angle, ideal_min=135, ideal_max=180)
+        back_score = _angle_to_score(back_angle, ideal_min=145, ideal_max=180)
 
-            # ── Visualization ──
-            import os
-            import uuid
-            from django.conf import settings
+        # Combined score (neck 50%, back 50%)
+        final_score = (neck_score * 0.5) + (back_score * 0.5)
 
-            # [YOLOv8] Draw skeleton using OpenCV (replaces mp_drawing)
-            _draw_skeleton(frame, ear, shoulder, hip, knee,
-                           neck_angle, back_angle)
+        # ── Detect posture issues based on angles ──
+        if neck_angle < 135:
+            issues.append("forward_head")
+        if back_angle < 145:
+            issues.append("rounded_back")
 
-            save_dir = os.path.join(settings.MEDIA_ROOT, 'analysis_results')
-            os.makedirs(save_dir, exist_ok=True)
+        # ── Visualization ──
+        import os
+        import uuid
+        from django.conf import settings
 
-            unique_id = uuid.uuid4().hex
-            filename = f"analysis_{unique_id}.jpg"
-            filepath = os.path.join(save_dir, filename)
+        # [YOLOv8] Draw skeleton using OpenCV (replaces mp_drawing)
+        _draw_skeleton(frame, ear, shoulder, hip, knee,
+                       neck_angle, back_angle)
 
-            cv2.imwrite(filepath, frame)
-            visualization_filename = f"analysis_results/{filename}"
+        save_dir = os.path.join(settings.MEDIA_ROOT, 'analysis_results')
+        os.makedirs(save_dir, exist_ok=True)
 
-            print(f"  Neck angle: {neck_angle:.1f}")
-            print(f"  Back angle: {back_angle:.1f}")
-            print(f"  Final score: {final_score:.1f}")
+        unique_id = uuid.uuid4().hex
+        filename = f"analysis_{unique_id}.jpg"
+        filepath = os.path.join(save_dir, filename)
 
-        except (IndexError, Exception) as e:
+        cv2.imwrite(filepath, frame)
+        visualization_filename = f"analysis_results/{filename}"
+
+        print(f"  Neck angle: {neck_angle:.1f}")
+        print(f"  Back angle: {back_angle:.1f}")
+        print(f"  Final score: {final_score:.1f}")
+
+    except (IndexError, Exception) as e:
             print(f"  ERROR extracting keypoints: {e}")
-            return {"result": "Bad Posture", "score": 0.0, "issues": ["keypoint_extraction_error"], "visualization_image": None}
-    else:
-        print("  No landmarks detected in this image.")
-        return {"result": "Bad Posture", "score": 0.0, "issues": ["no_person_detected"], "visualization_image": None}
+            return {
+                "result": "Invalid Image",
+                "score": None,
+                "issues": ["keypoint_extraction_error"],
+                "message": "Please upload a clearer image showing your full upper body sitting posture.",
+                "visualization_image": None
+            }
 
     # ── Final Summary ──
     print(f"\n{'='*30} ANALYSIS SUMMARY {'='*30}")
