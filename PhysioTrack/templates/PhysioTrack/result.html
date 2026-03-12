@@ -124,19 +124,28 @@
 
         <!-- Side Panel -->
         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            <div class="p-6">
+            <div class="p-6 pb-4">
                 <h4 class="font-bold text-slate-900" data-i18n="result_scan_details">Scan Details</h4>
                 <p class="text-xs text-slate-500 mt-1" data-i18n="result_ai_mapping">AI Body Mapping Results</p>
             </div>
-            <div class="flex-1 bg-slate-100 relative min-h-[200px] flex items-center justify-center">
+            <div class="flex-1 bg-slate-50 relative min-h-[260px] flex items-center justify-center p-4 border-y border-slate-100 overflow-hidden group">
+                {% if visualization_image %}
+                <!-- Posture Image with subtle hover effect -->
+                <img src="/media/{{ visualization_image }}" alt="AI Body Mapping Result" class="w-full h-full object-contain rounded-lg shadow-sm group-hover:scale-[1.02] transition-transform duration-500">
+                
+                <!-- Zoom/expand icon overlay -->
+                <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 transition-colors duration-300 pointer-events-none rounded-lg flex items-center justify-center m-4">
+                </div>
+                {% else %}
                 <div class="flex flex-col items-center gap-4 py-8">
                     <span class="material-symbols-outlined text-[80px] text-slate-300">accessibility_new</span>
                     <div class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold" data-i18n="result_analysis_complete">
                         Analysis Complete
                     </div>
                 </div>
+                {% endif %}
             </div>
-            <div class="p-6">
+            <div class="p-6 pt-5">
                 <div class="flex flex-col gap-3">
                     <div class="flex justify-between text-xs">
                         <span class="text-slate-500" data-i18n="result_cervical">Cervical (Neck)</span>
@@ -196,19 +205,6 @@
     </div>
 
     {% load static %}
-
-    <!-- Posture Visualization Section -->
-    {% if visualization_image %}
-    <div class="visualization-section mt-12 mb-8 text-center">
-        <h2 class="text-xl font-bold text-slate-900 mb-4" data-i18n="result_vis_title">Posture Visualization</h2>
-        <div class="inline-block relative">
-            <img src="/media/{{ visualization_image }}" class="analysis-image">
-        </div>
-        <p class="analysis-caption text-slate-500" data-i18n="result_vis_caption">
-            Red lines indicate detected posture issues.
-        </p>
-    </div>
-    {% endif %}
 
     <!-- Recommended Stretches Section -->
     {% if issues %}
