@@ -139,15 +139,15 @@ def _draw_skeleton(frame, ear, shoulder, hip, knee, neck_angle, back_angle):
         cv2.circle(frame, p_knee, 8, (0, 0, 255), -1)
 
 
-def analyze_posture(video_path):
+def analyze_posture(image_path):
     """
-    Analyze posture from a video file.
+    Analyze posture from an image file.
 
-    Opens the video with OpenCV, samples every 5th frame, uses YOLOv8 Pose
+    Opens the image with OpenCV, uses YOLOv8 Pose
     to detect body keypoints, and calculates neck/back angles.
 
     Args:
-        video_path (str): Absolute path to the video file.
+        image_path (str): Absolute path to the image file.
 
     Returns:
         dict: {
@@ -157,206 +157,132 @@ def analyze_posture(video_path):
             "visualization_image": str or None
         }
     """
-    # ── Debug: Video metadata ──
+    # ── Debug: Image metadata ──
     print(f"\n{'='*50}")
-    print(f"VIDEO PATH: {video_path}")
+    print(f"IMAGE PATH: {image_path}")
 
-    cap = cv2.VideoCapture(video_path)
-    print(f"VIDEO OPENED: {cap.isOpened()}")
+    frame = cv2.imread(image_path)
+    
+    if frame is None:
+        print("ERROR: Could not open image file.")
+        return {"result": "Bad Posture", "score": 0.0, "issues": ["image_error"], "visualization_image": None}
 
-    if not cap.isOpened():
-        print("ERROR: Could not open video file.")
-        return {"result": "Bad Posture", "score": 0.0}
-
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-    print(f"FPS: {fps}")
-    print(f"FRAME COUNT: {total_frame_count}")
+    frame_height, frame_width = frame.shape[:2]
     print(f"RESOLUTION: {frame_width}x{frame_height}")
     print(f"{'='*50}\n")
 
-    # ── Counters & Trackers ──
-    total_frames_read = 0
-    frames_processed = 0
-    frames_with_landmarks = 0
-    frame_scores = []
-    neck_angles = []
-    back_angles = []
-    frame_index = 0
-    saved_visualization = False
+    # Normalize image resolution to improve performance
+    frame = cv2.resize(frame, (640, 480))
+
     visualization_filename = None
+    issues = []
+    
+    # ── [YOLOv8] Run pose detection ──
+    # verbose=False suppresses console output from YOLO
+    results = _yolo_model(frame, verbose=False)
 
-    # Temporal smoothing: store last 5 frames of landmark positions
-    ear_history = deque(maxlen=5)
-    shoulder_history = deque(maxlen=5)
-    hip_history = deque(maxlen=5)
-    knee_history = deque(maxlen=5)
+    # Check if any person was detected with keypoints
+    has_keypoints = (
+        results[0].keypoints is not None
+        and len(results[0].keypoints.xy) > 0
+    )
+    print(f"  Pose result: {has_keypoints}")
 
-    # ── Video Processing Loop ──
-    while cap.isOpened():
-        ret, frame = cap.read()
+    if has_keypoints:
+        print("  LANDMARKS DETECTED")
 
-        if not ret:
-            print(f"Failed to read frame at index {frame_index}. Exiting loop.")
-            break
+        # [YOLOv8] Extract keypoints for the first detected person
+        # keypoints.xy shape: (num_persons, 17, 2) — pixel coordinates
+        kp = results[0].keypoints.xy[0]
 
-        total_frames_read += 1
+        # ── [YOLOv8] COCO keypoint extraction ──
+        # Map YOLO keypoints to required landmarks
+        try:
+            nose = _get_yolo_keypoint(kp, _KP_NOSE)
+            left_shoulder = _get_yolo_keypoint(kp, _KP_LEFT_SHOULDER)
+            right_shoulder = _get_yolo_keypoint(kp, _KP_RIGHT_SHOULDER)
+            left_hip = _get_yolo_keypoint(kp, _KP_LEFT_HIP)
+            right_hip = _get_yolo_keypoint(kp, _KP_RIGHT_HIP)
+            left_knee = _get_yolo_keypoint(kp, _KP_LEFT_KNEE)
+            right_knee = _get_yolo_keypoint(kp, _KP_RIGHT_KNEE)
 
-        # Process every 5th frame for performance
-        if frame_index % 5 != 0:
-            frame_index += 1
-            continue
+            # [YOLOv8] COCO format does not have a reliable "ear" keypoint
+            # for posture analysis. Use nose as the head reference point
+            # (approximates ear position for neck angle calculation).
+            ear = nose
 
-        frame_index += 1
-        frames_processed += 1
+            # Bilateral midpoints for stability
+            shoulder = _midpoint(left_shoulder, right_shoulder)
+            hip = _midpoint(left_hip, right_hip)
+            knee = _midpoint(left_knee, right_knee)
 
-        # Normalize frame resolution before pose detection
-        frame = cv2.resize(frame, (640, 480))
+            # Skip if any required landmark is missing
+            if any(pt is None for pt in [ear, shoulder, hip, knee]):
+                print("  Skipping: one or more keypoints not detected")
+                return {"result": "Bad Posture", "score": 0.0, "issues": ["missing_keypoints"], "visualization_image": None}
 
-        # ── [YOLOv8] Run pose detection ──
-        # verbose=False suppresses per-frame console output from YOLO
-        results = _yolo_model(frame, verbose=False)
+            # Neck angle: ear → shoulder → hip
+            neck_angle = _calculate_angle(ear, shoulder, hip)
 
-        print(f"Frame index: {frame_index}")
+            # Back angle: shoulder → hip → knee
+            back_angle = _calculate_angle(shoulder, hip, knee)
 
-        # Check if any person was detected with keypoints
-        has_keypoints = (
-            results[0].keypoints is not None
-            and len(results[0].keypoints.xy) > 0
-        )
-        print(f"  Pose result: {has_keypoints}")
+            # Scoring logic:
+            # Good neck angle: ~135-180 degrees (upright)
+            # Good back angle: ~145-180 degrees (straight back)
+            neck_score = _angle_to_score(neck_angle, ideal_min=135, ideal_max=180)
+            back_score = _angle_to_score(back_angle, ideal_min=145, ideal_max=180)
 
-        if has_keypoints:
-            print("  LANDMARKS DETECTED")
-            frames_with_landmarks += 1
+            # Combined score (neck 50%, back 50%)
+            final_score = (neck_score * 0.5) + (back_score * 0.5)
 
-            # [YOLOv8] Extract keypoints for the first detected person
-            # keypoints.xy shape: (num_persons, 17, 2) — pixel coordinates
-            kp = results[0].keypoints.xy[0]
+            # ── Detect posture issues based on angles ──
+            if neck_angle < 135:
+                issues.append("forward_head")
+            if back_angle < 145:
+                issues.append("rounded_back")
 
-            # ── [YOLOv8] COCO keypoint extraction ──
-            # Map YOLO keypoints to required landmarks
-            try:
-                nose = _get_yolo_keypoint(kp, _KP_NOSE)
-                left_shoulder = _get_yolo_keypoint(kp, _KP_LEFT_SHOULDER)
-                right_shoulder = _get_yolo_keypoint(kp, _KP_RIGHT_SHOULDER)
-                left_hip = _get_yolo_keypoint(kp, _KP_LEFT_HIP)
-                right_hip = _get_yolo_keypoint(kp, _KP_RIGHT_HIP)
-                left_knee = _get_yolo_keypoint(kp, _KP_LEFT_KNEE)
-                right_knee = _get_yolo_keypoint(kp, _KP_RIGHT_KNEE)
+            # ── Visualization ──
+            import os
+            import uuid
+            from django.conf import settings
 
-                # [YOLOv8] COCO format does not have a reliable "ear" keypoint
-                # for posture analysis. Use nose as the head reference point
-                # (approximates ear position for neck angle calculation).
-                ear = nose
+            # [YOLOv8] Draw skeleton using OpenCV (replaces mp_drawing)
+            _draw_skeleton(frame, ear, shoulder, hip, knee,
+                           neck_angle, back_angle)
 
-                # Bilateral midpoints for stability
-                shoulder = _midpoint(left_shoulder, right_shoulder)
-                hip = _midpoint(left_hip, right_hip)
-                knee = _midpoint(left_knee, right_knee)
+            save_dir = os.path.join(settings.MEDIA_ROOT, 'analysis_results')
+            os.makedirs(save_dir, exist_ok=True)
 
-                # Skip frame if any required landmark is missing
-                if any(pt is None for pt in [ear, shoulder, hip, knee]):
-                    print("  Skipping frame: one or more keypoints not detected")
-                    continue
+            unique_id = uuid.uuid4().hex
+            filename = f"analysis_{unique_id}.jpg"
+            filepath = os.path.join(save_dir, filename)
 
-                # Temporal smoothing: accumulate and average
-                ear_history.append(ear)
-                shoulder_history.append(shoulder)
-                hip_history.append(hip)
-                knee_history.append(knee)
+            cv2.imwrite(filepath, frame)
+            visualization_filename = f"analysis_results/{filename}"
 
-                ear = _smooth_point(ear_history)
-                shoulder = _smooth_point(shoulder_history)
-                hip = _smooth_point(hip_history)
-                knee = _smooth_point(knee_history)
+            print(f"  Neck angle: {neck_angle:.1f}")
+            print(f"  Back angle: {back_angle:.1f}")
+            print(f"  Final score: {final_score:.1f}")
 
-                # Neck angle: ear → shoulder → hip
-                neck_angle = _calculate_angle(ear, shoulder, hip)
-
-                # Back angle: shoulder → hip → knee
-                back_angle = _calculate_angle(shoulder, hip, knee)
-
-                # Scoring logic (relaxed thresholds for video-based detection):
-                # Good neck angle: ~135-180 degrees (upright)
-                # Good back angle: ~145-180 degrees (straight back)
-                neck_score = _angle_to_score(neck_angle, ideal_min=135, ideal_max=180)
-                back_score = _angle_to_score(back_angle, ideal_min=145, ideal_max=180)
-
-                # Combined frame score (neck 50%, back 50%)
-                frame_score = (neck_score * 0.5) + (back_score * 0.5)
-                frame_scores.append(frame_score)
-                neck_angles.append(neck_angle)
-                back_angles.append(back_angle)
-
-                # ── Visualization ──
-                if not saved_visualization:
-                    import os
-                    import uuid
-                    from django.conf import settings
-
-                    # [YOLOv8] Draw skeleton using OpenCV (replaces mp_drawing)
-                    _draw_skeleton(frame, ear, shoulder, hip, knee,
-                                   neck_angle, back_angle)
-
-                    save_dir = os.path.join(settings.MEDIA_ROOT, 'analysis_results')
-                    os.makedirs(save_dir, exist_ok=True)
-
-                    unique_id = uuid.uuid4().hex
-                    filename = f"analysis_{unique_id}.jpg"
-                    filepath = os.path.join(save_dir, filename)
-
-                    cv2.imwrite(filepath, frame)
-                    visualization_filename = f"analysis_results/{filename}"
-                    saved_visualization = True
-
-                print(f"  Neck angle: {neck_angle:.1f}")
-                print(f"  Back angle: {back_angle:.1f}")
-                print(f"  Frame score: {frame_score:.1f}")
-
-            except (IndexError, Exception) as e:
-                print(f"  ERROR extracting keypoints: {e}")
-                continue
-        else:
-            print("  No landmarks detected in this frame.")
-
-    cap.release()
+        except (IndexError, Exception) as e:
+            print(f"  ERROR extracting keypoints: {e}")
+            return {"result": "Bad Posture", "score": 0.0, "issues": ["keypoint_extraction_error"], "visualization_image": None}
+    else:
+        print("  No landmarks detected in this image.")
+        return {"result": "Bad Posture", "score": 0.0, "issues": ["no_person_detected"], "visualization_image": None}
 
     # ── Final Summary ──
     print(f"\n{'='*30} ANALYSIS SUMMARY {'='*30}")
-    print(f"Total frames read: {total_frames_read}")
-    print(f"Frames processed (every 5th): {frames_processed}")
-    print(f"Frames with landmarks: {frames_with_landmarks}")
-
-    if not frame_scores:
-        print("WARNING: No pose landmarks detected in the entire video.")
-        print(f"{'='*78}\n")
-        return {"result": "Bad Posture", "score": 0.0, "issues": ["forward_head", "rounded_back"]}
-
-    avg_score = sum(frame_scores) / len(frame_scores)
 
     # Clamp score to 0-100
-    final_score = round(max(0.0, min(100.0, avg_score)), 1)
+    final_score = round(max(0.0, min(100.0, final_score)), 1)
 
     # Determine result (Good if >= 65)
     result = "Good Posture" if final_score >= 65.0 else "Bad Posture"
 
-    print(f"Average score: {final_score}")
+    print(f"Final score: {final_score}")
     print(f"Final result: {result}")
-    # ── Detect posture issues based on average angles ──
-    avg_neck = sum(neck_angles) / len(neck_angles)
-    avg_back = sum(back_angles) / len(back_angles)
-    issues = []
-    if avg_neck < 135:
-        issues.append("forward_head")
-    if avg_back < 145:
-        issues.append("rounded_back")
-
-    print(f"Avg neck angle: {avg_neck:.1f}")
-    print(f"Avg back angle: {avg_back:.1f}")
     print(f"Detected issues: {issues}")
     print(f"{'='*78}\n")
 

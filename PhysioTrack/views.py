@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.conf import settings
 
 from .models import PostureVideo
-from .forms import RegisterForm, VideoUploadForm
+from .forms import RegisterForm, ImageUploadForm
 from .posture_analysis import analyze_posture
 
 
@@ -59,40 +59,40 @@ def logout_view(request):
 
 
 @login_required
-def upload_video(request):
-    """Handle video upload, run posture analysis, and save results."""
+def upload_image(request):
+    """Handle image upload, run posture analysis, and save results."""
     if request.method == 'POST':
-        form = VideoUploadForm(request.POST, request.FILES)
+        form = ImageUploadForm(request.POST, request.FILES)
         if form.is_valid():
             # Save the PostureVideo instance (without result yet)
-            posture_video = form.save(commit=False)
-            posture_video.user = request.user
-            posture_video.save()
+            posture_image = form.save(commit=False)
+            posture_image.user = request.user
+            posture_image.save()
 
-            # Get the absolute path to the saved video file
-            video_path = os.path.join(settings.MEDIA_ROOT, str(posture_video.video))
+            # Get the absolute path to the saved image file
+            image_path = os.path.join(settings.MEDIA_ROOT, str(posture_image.image))
 
             # Run posture analysis
-            analysis = analyze_posture(video_path)
+            analysis = analyze_posture(image_path)
 
             # Store results
-            posture_video.result = analysis['result']
-            posture_video.score = analysis['score']
-            posture_video.save()
+            posture_image.result = analysis['result']
+            posture_image.score = analysis['score']
+            posture_image.save()
 
             # Store detected posture issues in session for the result page
             request.session['posture_issues'] = analysis.get('issues', [])
             request.session['visualization_image'] = analysis.get('visualization_image')
 
-            messages.success(request, 'Video uploaded and analyzed successfully!')
-            return redirect('result', pk=posture_video.pk)
+            messages.success(request, 'Image uploaded and analyzed successfully!')
+            return redirect('result', pk=posture_image.pk)
         else:
-            # Form validation errors (format, duration) are already in form.errors
+            # Form validation errors
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, error)
     else:
-        form = VideoUploadForm()
+        form = ImageUploadForm()
 
     return render(request, 'PhysioTrack/upload.html', {'form': form})
 

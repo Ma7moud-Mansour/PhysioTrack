@@ -1,5 +1,5 @@
 {% extends 'PhysioTrack/base.html' %}
-{% block title %}Upload Video — PhysioTrack{% endblock %}
+{% block title %}Upload Image — PhysioTrack{% endblock %}
 
 {% block content %}
 <div class="max-w-[960px] mx-auto px-6 py-8">
@@ -7,13 +7,13 @@
     <nav class="flex items-center gap-2 mb-6 text-sm">
         <a class="text-slate-500 hover:text-primary transition-colors" href="{% url 'home' %}" data-i18n="nav_home">Home</a>
         <span class="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-        <span class="text-slate-900 font-medium" data-i18n="upload_breadcrumb">Upload Video</span>
+        <span class="text-slate-900 font-medium" data-i18n="upload_breadcrumb">Upload Image</span>
     </nav>
 
     <!-- Page Title -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-slate-900 mb-2" data-i18n="upload_title">Upload Exercise Video</h1>
-        <p class="text-slate-500" data-i18n="upload_subtitle">Our AI will analyze your form and provide real-time feedback for your recovery journey.</p>
+        <h1 class="text-3xl font-bold text-slate-900 mb-2" data-i18n="upload_title">Upload Exercise Image</h1>
+        <p class="text-slate-500" data-i18n="upload_subtitle">Our AI will analyze your posture and provide real-time feedback for your recovery journey.</p>
     </div>
 
     <!-- Upload Card -->
@@ -23,30 +23,30 @@
             <div class="p-8 lg:p-12 flex flex-col items-center">
                 <!-- Drag and Drop Zone -->
                 <div class="w-full max-w-2xl group cursor-pointer" id="dropzoneWrapper">
-                    <label class="flex flex-col items-center justify-center w-full min-h-[320px] rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300" for="video-upload" id="dropzone">
+                    <label class="flex flex-col items-center justify-center w-full min-h-[320px] rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300" for="image-upload" id="dropzone">
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 px-10 text-center">
                             <div class="w-20 h-20 mb-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-300">
-                                <span class="material-symbols-outlined text-4xl">movie_edit</span>
+                                <span class="material-symbols-outlined text-4xl">image</span>
                             </div>
-                            <p class="mb-2 text-xl font-bold text-slate-900 leading-tight" data-i18n="upload_drag">Drag and drop video here</p>
+                            <p class="mb-2 text-xl font-bold text-slate-900 leading-tight" data-i18n="upload_drag">Drag and drop image here</p>
                             <p class="text-sm text-slate-500 mb-6 max-w-sm" data-i18n="upload_drag_desc">
-                                Capture your movement clearly from a side view for the best analysis results.
+                                Capture your posture clearly from a side view for the best analysis results.
                             </p>
                             <div class="flex flex-wrap justify-center gap-3 text-xs font-medium text-slate-500">
-                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.MP4</span>
-                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.MOV</span>
-                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.AVI</span>
+                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.JPG</span>
+                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.PNG</span>
+                                <span class="px-2 py-1 rounded-md bg-white border border-slate-200">.WEBP</span>
                             </div>
                         </div>
                     </label>
-                    {{ form.video }}
+                    {{ form.image }}
                 </div>
 
                 <!-- File Preview (hidden initially) -->
                 <div class="w-full max-w-2xl mt-6 hidden" id="filePreview">
                     <div class="flex items-center gap-4 px-6 py-4 rounded-xl bg-primary/5 border border-primary/20">
                         <div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                            <span class="material-symbols-outlined">videocam</span>
+                            <span class="material-symbols-outlined">image</span>
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-semibold text-slate-900 truncate" id="fileName"></p>
@@ -72,10 +72,10 @@
                 <!-- Constraints Info -->
                 <div class="mt-8 flex items-center gap-6 py-4 px-6 rounded-lg bg-slate-50 border border-slate-200 w-full max-w-2xl">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-primary">schedule</span>
+                        <span class="material-symbols-outlined text-primary">storage</span>
                         <div>
-                            <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider" data-i18n="upload_duration">Duration</p>
-                            <p class="text-sm font-semibold" data-i18n="upload_max_duration">Max 20 seconds</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider" data-i18n="upload_size">File Size</p>
+                            <p class="text-sm font-semibold" data-i18n="upload_max_size">Max 10 MB</p>
                         </div>
                     </div>
                     <div class="h-10 w-px bg-slate-200"></div>
@@ -83,7 +83,7 @@
                         <span class="material-symbols-outlined text-primary">cloud_upload</span>
                         <div>
                             <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider" data-i18n="upload_formats">Formats</p>
-                            <p class="text-sm font-semibold">MP4, MOV, AVI</p>
+                            <p class="text-sm font-semibold">JPG, PNG, WEBP</p>
                         </div>
                     </div>
                 </div>
@@ -91,7 +91,7 @@
                 <!-- Submit Button -->
                 <div class="mt-12 w-full max-w-md">
                     <button type="submit" class="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold text-lg rounded-xl shadow-xl shadow-primary/25 flex items-center justify-center gap-3 transition-all" id="submitBtn">
-                        <span class="btn-text" data-i18n="upload_btn">Upload Video</span>
+                        <span class="btn-text" data-i18n="upload_btn">Upload Image</span>
                         <span class="material-symbols-outlined btn-text">arrow_forward</span>
                         <span class="btn-loading hidden items-center gap-2">
                             <svg class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
@@ -144,7 +144,7 @@
     const submitBtn = document.getElementById('submitBtn');
 
     if (fileInput) {
-        fileInput.id = 'video-upload';
+        fileInput.id = 'image-upload';
         fileInput.classList.add('hidden');
     }
 

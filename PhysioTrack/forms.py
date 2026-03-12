@@ -43,62 +43,47 @@ class RegisterForm(UserCreationForm):
         return user
 
 
-class VideoUploadForm(forms.ModelForm):
-    """Form for uploading posture analysis videos with validation."""
+class ImageUploadForm(forms.ModelForm):
+    """Form for uploading posture analysis images with validation."""
 
-    ALLOWED_EXTENSIONS = ['mp4', 'mov', 'avi']
-    MAX_DURATION_SECONDS = 20
+    ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']
 
     class Meta:
         model = PostureVideo
-        fields = ('video',)
+        fields = ('image',)
         widgets = {
-            'video': forms.ClearableFileInput(attrs={
+            'image': forms.ClearableFileInput(attrs={
                 'class': 'form-input file-input',
-                'accept': '.mp4,.mov,.avi',
+                'accept': '.jpg,.jpeg,.png,.webp',
             })
         }
 
-    def clean_video(self):
-        video = self.cleaned_data.get('video')
-        if not video:
-            raise forms.ValidationError('Please select a video file.')
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if not image:
+            raise forms.ValidationError('Please select an image file.')
 
         # Validate file extension
-        ext = os.path.splitext(video.name)[1].lower().lstrip('.')
+        ext = os.path.splitext(image.name)[1].lower().lstrip('.')
         if ext not in self.ALLOWED_EXTENSIONS:
             raise forms.ValidationError(
                 f'Invalid format "{ext}". Accepted formats: {", ".join(self.ALLOWED_EXTENSIONS)}.'
             )
 
-        # Validate video duration using OpenCV
-        # Write to a temporary file so OpenCV can read it
+        # Basic OpenCV validation to ensure the image is readable
         import tempfile
         with tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=False) as tmp:
-            for chunk in video.chunks():
+            for chunk in image.chunks():
                 tmp.write(chunk)
             tmp_path = tmp.name
 
         try:
-            cap = cv2.VideoCapture(tmp_path)
-            if not cap.isOpened():
-                raise forms.ValidationError('Could not read the video file. Please upload a valid video.')
-
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            cap.release()
-
-            if fps > 0:
-                duration = frame_count / fps
-                if duration > self.MAX_DURATION_SECONDS:
-                    raise forms.ValidationError(
-                        f'Video is {duration:.1f}s long. Maximum allowed duration is {self.MAX_DURATION_SECONDS} seconds.'
-                    )
-            else:
-                raise forms.ValidationError('Could not determine video duration. Please upload a valid video.')
+            img = cv2.imread(tmp_path)
+            if img is None:
+                raise forms.ValidationError('Could not read the image file. Please upload a valid image.')
         finally:
             os.unlink(tmp_path)
 
         # Reset file pointer so Django can save it
-        video.seek(0)
-        return video
+        image.seek(0)
+        return image
