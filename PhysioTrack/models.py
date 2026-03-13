@@ -23,6 +23,7 @@ class UserProfile(models.Model):
     )
     
     name = models.CharField(max_length=100)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     age = models.IntegerField(null=True, blank=True)
     activity = models.CharField(max_length=50, choices=[
         ("laptop", "Working on laptop"),

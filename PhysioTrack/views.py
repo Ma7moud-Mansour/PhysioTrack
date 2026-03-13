@@ -2,12 +2,13 @@ import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.conf import settings
 
 from .models import PostureVideo
-from .forms import RegisterForm, ImageUploadForm
+from .forms import RegisterForm, ImageUploadForm, UserUpdateForm, UserProfileUpdateForm
 from .posture_analysis import analyze_posture
 
 
@@ -148,3 +149,54 @@ def doctor_dashboard(request):
     }
     
     return render(request, 'PhysioTrack/doctor_dashboard.html', context)
+
+@login_required
+def profile_view(request):
+    """User profile view mapping both patient details and doctor patients list."""
+    user = request.user
+    profile = user.userprofile
+    is_doctor = profile.role == 'doctor'
+    
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=user)
+        profile_form = UserProfileUpdateForm(request.POST, instance=profile)
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        user_form = UserUpdateForm(instance=user)
+        profile_form = UserProfileUpdateForm(instance=profile)
+        
+    patients = None
+    if is_doctor:
+        patients = profile.patients.all()
+        
+    context = {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'is_doctor': is_doctor,
+        'patients': patients,
+    }
+    return render(request, 'PhysioTrack/profile.html', context)
+
+@login_required
+def change_password(request):
+    """Handle password changes for authenticated users."""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # Keep user logged in
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+    
+    return render(request, 'PhysioTrack/change_password.html', {'form': form})

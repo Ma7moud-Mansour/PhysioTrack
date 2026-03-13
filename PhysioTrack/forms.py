@@ -20,6 +20,10 @@ class RegisterForm(UserCreationForm):
         max_length=100, required=True,
         widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Full Name'})
     )
+    phone_number = forms.CharField(
+        max_length=20, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-input', 'placeholder': 'Phone Number (Optional)'})
+    )
     age = forms.IntegerField(
         required=False,
         widget=forms.NumberInput(attrs={'class': 'form-input', 'placeholder': 'Age (Optional)', 'id': 'id_age'})
@@ -77,7 +81,7 @@ class RegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'role', 'doctor', 'password1', 'password2', 'age', 'activity', 'sitting_hours', 'exercise_habit')
+        fields = ('username', 'email', 'name', 'phone_number', 'role', 'doctor', 'password1', 'password2', 'age', 'activity', 'sitting_hours', 'exercise_habit')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -100,6 +104,7 @@ class RegisterForm(UserCreationForm):
             profile = UserProfile.objects.create(
                 user=user,
                 name=self.cleaned_data['name'],
+                phone_number=self.cleaned_data.get('phone_number', ''),
                 age=self.cleaned_data['age'],
                 activity=self.cleaned_data['activity'],
                 sitting_hours=self.cleaned_data['sitting_hours'],
@@ -156,3 +161,32 @@ class ImageUploadForm(forms.ModelForm):
         # Reset file pointer so Django can save it
         image.seek(0)
         return image
+
+
+class UserUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['email']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = input_classes
+
+class UserProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['name', 'phone_number', 'age', 'activity', 'sitting_hours', 'exercise_habit', 'doctor']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
+        for field_name, field in self.fields.items():
+            field.widget.attrs['class'] = input_classes
+            
+        # specifically for the UI ID binding to hide them in JS
+        if 'age' in self.fields: self.fields['age'].widget.attrs['id'] = 'id_age'
+        if 'activity' in self.fields: self.fields['activity'].widget.attrs['id'] = 'id_activity'
+        if 'sitting_hours' in self.fields: self.fields['sitting_hours'].widget.attrs['id'] = 'id_sitting_hours'
+        if 'exercise_habit' in self.fields: self.fields['exercise_habit'].widget.attrs['id'] = 'id_exercise_habit'
