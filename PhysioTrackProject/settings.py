@@ -92,10 +92,11 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'PhysioTrack', 'static'),
 ]
+STATIC_ROOT = "/home/tekers-phisyotrack/static"
 
 # Media files (user uploads)
 MEDIA_URL = '/media/'
