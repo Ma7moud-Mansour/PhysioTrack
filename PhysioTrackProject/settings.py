@@ -24,6 +24,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.app.github.dev",
     "https://maison-scrawniest-jenice.ngrok-free.dev",
     "https://*.ngrok-free.app",
+    "https://phisyotrack.tekers.tech",
+    "https://tekers.tech",
 ]
 
 # Application definition
