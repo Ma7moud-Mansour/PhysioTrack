@@ -11,7 +11,7 @@
             <h1 class="text-3xl font-black text-slate-900 tracking-tight" data-i18n="reg_title">Create Account</h1>
             <p class="text-slate-500 font-medium mt-2" data-i18n="reg_subtitle">Join ErgoTrack to start analyzing your posture</p>
         </div>
-        <form method="post" novalidate class="space-y-1">
+        <form method="post" enctype="multipart/form-data" novalidate class="space-y-1">
             {% csrf_token %}
             {% for field in form %}
             <div class="mb-5 relative group" id="div_{{ field.html_name }}">
@@ -58,6 +58,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         const roleField = document.getElementById("id_role");
         const doctorFieldContainer = document.getElementById("div_doctor");
+        const verificationFieldContainer = document.getElementById("div_verification_document");
         
         // These fields should only show up for patients
         const patientFields = [
@@ -71,9 +72,11 @@
             function toggleRoleFields() {
                 if (roleField.value === "patient") {
                     if (doctorFieldContainer) doctorFieldContainer.style.display = "block";
+                    if (verificationFieldContainer) verificationFieldContainer.style.display = "none";
                     patientFields.forEach(field => { if(field) field.style.display = "block"; });
                 } else {
                     if (doctorFieldContainer) doctorFieldContainer.style.display = "none";
+                    if (verificationFieldContainer) verificationFieldContainer.style.display = "block";
                     patientFields.forEach(field => { if(field) field.style.display = "none"; });
                 }
             }

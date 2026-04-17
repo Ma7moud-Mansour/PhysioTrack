@@ -5,7 +5,90 @@
 <div class="max-w-7xl mx-auto px-6 py-8">
     <div class="mb-8">
         <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Doctor Dashboard</h1>
-        <p class="text-slate-500 mt-2">Monitor your patients' posture analysis results and progress.</p>
+        <p class="text-slate-500 mt-2">Monitor your patients' posture analysis results and review doctor applications.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- Pending Doctor Applications                                     -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    {% if pending_doctors %}
+    <div class="mb-10">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="size-10 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                <span class="material-symbols-outlined">pending_actions</span>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Pending Doctor Applications</h2>
+                <p class="text-xs text-slate-500">{{ pending_doctors|length }} application{{ pending_doctors|length|pluralize }} awaiting review</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {% for doc in pending_doctors %}
+            <div class="bg-white rounded-xl shadow-sm border border-amber-200 overflow-hidden">
+                <div class="p-5 border-b border-slate-100">
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="size-11 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-base">
+                            {{ doc.name|make_list|first|upper }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-slate-900 truncate">{{ doc.name }}</h4>
+                            <p class="text-xs text-slate-500 truncate">{{ doc.user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <span class="material-symbols-outlined text-sm">schedule</span>
+                        Applied {{ doc.created_at|timesince }} ago
+                    </div>
+                </div>
+
+                <!-- Verification Document -->
+                {% if doc.verification_document %}
+                <div class="p-4 bg-slate-50 border-b border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Verification Document</p>
+                    <a href="{{ doc.verification_document.url }}" target="_blank" class="block group">
+                        <div class="relative rounded-lg overflow-hidden border border-slate-200 bg-white">
+                            <img src="{{ doc.verification_document.url }}" alt="Verification" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
+                            <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors flex items-center justify-center">
+                                <span class="material-symbols-outlined text-white opacity-0 group-hover:opacity-100 transition-opacity text-2xl drop-shadow-lg">zoom_in</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="p-4 flex gap-3">
+                    <form method="post" action="{% url 'approve_doctor' doc.pk %}" class="flex-1">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm">
+                            <span class="material-symbols-outlined text-base">check_circle</span>
+                            Approve
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'reject_doctor' doc.pk %}" class="flex-1"
+                          onsubmit="return confirm('Are you sure you want to reject this application?');">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full py-2.5 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+                            <span class="material-symbols-outlined text-base">cancel</span>
+                            Reject
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- Patients                                                         -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="flex items-center gap-3 mb-5">
+        <div class="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <span class="material-symbols-outlined">group</span>
+        </div>
+        <h2 class="text-xl font-bold text-slate-900">My Patients</h2>
     </div>
 
     {% if patients %}

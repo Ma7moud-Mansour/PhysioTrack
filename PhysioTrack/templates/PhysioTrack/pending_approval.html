@@ -1,0 +1,72 @@
+{% extends 'PhysioTrack/base.html' %}
+{% block title %}Account Under Review — ErgoTrack{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-6 py-16">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl shadow-slate-200/40 border border-slate-100 p-10 text-center">
+
+        <!-- Icon -->
+        {% if profile.is_rejected %}
+        <div class="size-20 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <span class="material-symbols-outlined text-red-500 text-4xl">block</span>
+        </div>
+        {% else %}
+        <div class="size-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+            <span class="material-symbols-outlined text-amber-600 text-4xl">hourglass_top</span>
+        </div>
+        {% endif %}
+
+        <!-- Status Badge -->
+        {% if profile.is_rejected %}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 uppercase tracking-wide mb-4">
+            Rejected
+        </span>
+        {% else %}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700 uppercase tracking-wide mb-4">
+            Pending Review
+        </span>
+        {% endif %}
+
+        <!-- Title & Message -->
+        {% if profile.is_rejected %}
+        <h1 class="text-2xl font-black text-slate-900 mb-3">Application Rejected</h1>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8">
+            Unfortunately, your doctor verification was not approved. If you believe this is an error, please contact support.
+        </p>
+        {% else %}
+        <h1 class="text-2xl font-black text-slate-900 mb-3">Account Under Review</h1>
+        <p class="text-slate-500 text-sm leading-relaxed mb-8">
+            Your doctor account has been created and your verification document has been submitted.
+            An approved doctor will review your credentials shortly. You'll have full access once approved.
+        </p>
+        {% endif %}
+
+        <!-- Status Info -->
+        <div class="bg-slate-50 rounded-xl border border-slate-100 p-5 mb-8">
+            <div class="flex items-center justify-between text-sm mb-3">
+                <span class="text-slate-500 font-medium">Account</span>
+                <span class="font-bold text-slate-900">{{ request.user.username }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm mb-3">
+                <span class="text-slate-500 font-medium">Role</span>
+                <span class="font-bold text-slate-900">Doctor</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500 font-medium">Status</span>
+                {% if profile.is_rejected %}
+                <span class="font-bold text-red-600">Rejected</span>
+                {% else %}
+                <span class="font-bold text-amber-600">Pending Approval</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Logout Button -->
+        <a href="{% url 'logout' %}"
+           class="inline-flex items-center gap-2 px-8 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-lg">
+            <span class="material-symbols-outlined text-lg">logout</span>
+            Sign Out
+        </a>
+    </div>
+</div>
+{% endblock %}

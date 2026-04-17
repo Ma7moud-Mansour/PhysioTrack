@@ -7,7 +7,7 @@ from .models import PostureVideo, UserProfile
 
 
 class RegisterForm(UserCreationForm):
-    """Registration form extending UserCreationForm with an email field."""
+    """Registration form with role-based fields and doctor verification."""
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -71,36 +71,85 @@ class RegisterForm(UserCreationForm):
         ],
         widget=forms.Select(attrs={'class': 'form-input', 'id': 'id_role'})
     )
-    
+
     doctor = forms.ModelChoiceField(
-        queryset=UserProfile.objects.filter(role='doctor'),
+        queryset=UserProfile.objects.filter(role='doctor', status='approved'),
         required=False,
         empty_label="Select your Doctor (Optional)",
         widget=forms.Select(attrs={'class': 'form-input', 'id': 'doctor-field'})
     )
 
+    verification_document = forms.ImageField(
+        required=False,
+        widget=forms.ClearableFileInput(attrs={
+            'class': 'form-input',
+            'accept': '.jpg,.jpeg,.png',
+            'id': 'id_verification_document',
+        }),
+        help_text='Upload your ID card or certificate (JPG, PNG).',
+    )
+
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'phone_number', 'role', 'doctor', 'password1', 'password2', 'age', 'activity', 'sitting_hours', 'exercise_habit')
+        fields = (
+            'username', 'email', 'name', 'phone_number', 'role', 'doctor',
+            'verification_document', 'password1', 'password2',
+            'age', 'activity', 'sitting_hours', 'exercise_habit',
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        # Premium Tailwind CSS classes for all inputs
-        input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
-        
+
+        input_classes = (
+            'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 '
+            'text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 '
+            'focus:border-primary focus:bg-white outline-none transition-all duration-300 '
+            'hover:border-slate-300 shadow-sm appearance-none'
+        )
+
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = input_classes
-            
+
         self.fields['username'].widget.attrs['placeholder'] = 'Choose a username'
         self.fields['password1'].widget.attrs['placeholder'] = 'Create a secure password'
         self.fields['password2'].widget.attrs['placeholder'] = 'Confirm your password'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        doc = cleaned_data.get('verification_document')
+
+        if role == 'doctor' and not doc:
+            self.add_error(
+                'verification_document',
+                'Verification document is required for doctor registration.'
+            )
+
+        # Validate file type if provided
+        if doc:
+            ext = os.path.splitext(doc.name)[1].lower().lstrip('.')
+            if ext not in ('jpg', 'jpeg', 'png'):
+                self.add_error(
+                    'verification_document',
+                    'Only JPG and PNG files are allowed.'
+                )
+            # 5 MB limit
+            if doc.size > 5 * 1024 * 1024:
+                self.add_error(
+                    'verification_document',
+                    'File size must be under 5 MB.'
+                )
+
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data['email']
         if commit:
             user.save()
+            role = self.cleaned_data['role']
+            status = 'approved' if role == 'patient' else 'pending'
+
             profile = UserProfile.objects.create(
                 user=user,
                 name=self.cleaned_data['name'],
@@ -109,7 +158,9 @@ class RegisterForm(UserCreationForm):
                 activity=self.cleaned_data['activity'],
                 sitting_hours=self.cleaned_data['sitting_hours'],
                 exercise_habit=self.cleaned_data['exercise_habit'],
-                role=self.cleaned_data['role']
+                role=role,
+                status=status,
+                verification_document=self.cleaned_data.get('verification_document'),
             )
             if self.cleaned_data.get('doctor'):
                 profile.doctor = self.cleaned_data['doctor']
@@ -167,7 +218,7 @@ class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['email']
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
@@ -178,13 +229,13 @@ class UserProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = UserProfile
         fields = ['name', 'phone_number', 'age', 'activity', 'sitting_hours', 'exercise_habit', 'doctor']
-        
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         input_classes = 'w-full px-4 py-3.5 rounded-xl border-2 border-slate-200/80 bg-slate-50 text-slate-900 text-sm font-semibold focus:ring-4 focus:ring-primary/10 focus:border-primary focus:bg-white outline-none transition-all duration-300 hover:border-slate-300 shadow-sm appearance-none'
         for field_name, field in self.fields.items():
             field.widget.attrs['class'] = input_classes
-            
+
         # specifically for the UI ID binding to hide them in JS
         if 'age' in self.fields: self.fields['age'].widget.attrs['id'] = 'id_age'
         if 'activity' in self.fields: self.fields['activity'].widget.attrs['id'] = 'id_activity'
